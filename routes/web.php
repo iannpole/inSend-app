@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminRecipeController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\SearchController;
 
 Route::get('/', function () {
     return view('admin/login');
@@ -20,6 +21,10 @@ Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->name('admi
 // Admin Protected Routes
 Route::middleware(['web', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // Global Search
+    Route::get('/search', [SearchController::class, 'search'])->name('search');
+    Route::post('/export/orders', [DashboardController::class, 'exportOrders'])->name('export.orders');
     
     // Products
     Route::resource('products', AdminProductController::class)->except(['show']);

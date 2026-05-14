@@ -4,11 +4,35 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Recipe;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AdminRecipeController extends Controller
 {
+    private function findRecipe(string $id): Recipe
+    {
+        // First try finding by exact raw string (for JSON imported data)
+        $recipe = Recipe::whereRaw(['_id' => $id])->first();
+
+        if (!$recipe) {
+            $recipe = Recipe::find($id);
+        }
+
+        if (!$recipe && strlen($id) === 24 && ctype_xdigit($id)) {
+            try {
+                $recipe = Recipe::where('_id', new \MongoDB\BSON\ObjectId($id))->first();
+            } catch (\Exception $e) {
+                // Ignore exception and continue
+            }
+        }
+
+        if (!$recipe) {
+            abort(404);
+        }
+
+        return $recipe;
+    }
     public function index(Request $request)
     {
         $query = Recipe::query();
@@ -54,18 +78,20 @@ class AdminRecipeController extends Controller
 
         Recipe::create($validated);
 
+        ActivityLog::log('create', 'Recipe', $validated['title']);
+
         return redirect()->route('admin.recipes.index')->with('success', 'Recipe created successfully.');
     }
 
     public function edit(string $id)
     {
-        $recipe = Recipe::findOrFail($id);
+        $recipe = $this->findRecipe($id);
         return view('admin.recipes.form', compact('recipe'));
     }
 
     public function update(Request $request, string $id)
     {
-        $recipe = Recipe::findOrFail($id);
+        $recipe = $this->findRecipe($id);
 
         $validated = $request->validate([
             'title'        => 'required|string|max:255',
@@ -91,13 +117,18 @@ class AdminRecipeController extends Controller
 
         $recipe->update($validated);
 
+        ActivityLog::log('update', 'Recipe', $recipe->title);
+
         return redirect()->route('admin.recipes.index')->with('success', 'Recipe updated successfully.');
     }
 
     public function destroy(string $id)
     {
-        $recipe = Recipe::findOrFail($id);
+        $recipe = $this->findRecipe($id);
+        $title = $recipe->title;
         $recipe->delete();
+
+        ActivityLog::log('delete', 'Recipe', $title);
 
         return redirect()->route('admin.recipes.index')->with('success', 'Recipe deleted successfully.');
     }

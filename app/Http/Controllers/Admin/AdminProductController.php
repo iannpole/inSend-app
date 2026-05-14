@@ -4,11 +4,37 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use MongoDB\BSON\ObjectId;
 
 class AdminProductController extends Controller
 {
+    private function findProduct(string $id): Product
+    {
+        // First try finding by exact raw string (for JSON imported data)
+        $product = Product::whereRaw(['_id' => $id])->first();
+
+        if (!$product) {
+            $product = Product::find($id);
+        }
+
+        if (!$product && strlen($id) === 24 && ctype_xdigit($id)) {
+            try {
+                $product = Product::where('_id', new ObjectId($id))->first();
+            } catch (\Exception $e) {
+                // Ignore exception and continue
+            }
+        }
+
+        if (!$product) {
+            abort(404);
+        }
+
+        return $product;
+    }
+
     public function index(Request $request)
     {
         $query = Product::query();
@@ -42,7 +68,6 @@ class AdminProductController extends Controller
             'unit'                => 'required|string|max:50',
             'is_active'           => 'nullable|string',
             'images.*'            => 'nullable|image|max:2048',
-            // Discount fields
             'discount_active'     => 'nullable|string',
             'discount_percentage' => 'nullable|numeric|min:0|max:100',
             'discount_fixed'      => 'nullable|numeric|min:0',
@@ -54,12 +79,10 @@ class AdminProductController extends Controller
         $validated['is_active'] = $request->has('is_active');
         $validated['slug'] = Str::slug($validated['name']);
 
-        // Build discount_info
         $discountActive = $request->has('discount_active');
         $percentage = (float) ($request->discount_percentage ?? 0);
         $fixedAmount = (float) ($request->discount_fixed ?? 0);
 
-        // Auto-calculate sale_price
         $basePrice = (float) $validated['base_price'];
         $salePrice = $basePrice;
 
@@ -81,7 +104,6 @@ class AdminProductController extends Controller
             'campaign_name' => $request->campaign_name ?? '',
         ];
 
-        // Handle images
         $imagePaths = [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
@@ -90,23 +112,24 @@ class AdminProductController extends Controller
         }
         $validated['images'] = $imagePaths;
 
-        // Remove non-model fields
         unset($validated['discount_active'], $validated['discount_percentage'], $validated['discount_fixed'], $validated['discount_start'], $validated['discount_end'], $validated['campaign_name']);
 
         Product::create($validated);
+
+        ActivityLog::log('create', 'Product', $validated['name']);
 
         return redirect()->route('admin.products.index')->with('success', 'Product created successfully.');
     }
 
     public function edit(string $id)
     {
-        $product = Product::findOrFail($id);
+        $product = $this->findProduct($id);
         return view('admin.products.form', compact('product'));
     }
 
     public function update(Request $request, string $id)
     {
-        $product = Product::findOrFail($id);
+        $product = $this->findProduct($id);
 
         $validated = $request->validate([
             'name'                => 'required|string|max:255',
@@ -117,7 +140,6 @@ class AdminProductController extends Controller
             'unit'                => 'required|string|max:50',
             'is_active'           => 'nullable|string',
             'images.*'            => 'nullable|image|max:2048',
-            // Discount fields
             'discount_active'     => 'nullable|string',
             'discount_percentage' => 'nullable|numeric|min:0|max:100',
             'discount_fixed'      => 'nullable|numeric|min:0',
@@ -129,12 +151,10 @@ class AdminProductController extends Controller
         $validated['is_active'] = $request->has('is_active');
         $validated['slug'] = Str::slug($validated['name']);
 
-        // Build discount_info
         $discountActive = $request->has('discount_active');
         $percentage = (float) ($request->discount_percentage ?? 0);
         $fixedAmount = (float) ($request->discount_fixed ?? 0);
 
-        // Auto-calculate sale_price
         $basePrice = (float) $validated['base_price'];
         $salePrice = $basePrice;
 
@@ -156,7 +176,6 @@ class AdminProductController extends Controller
             'campaign_name' => $request->campaign_name ?? '',
         ];
 
-        // Handle images
         if ($request->hasFile('images')) {
             $existingImages = $product->images ?? [];
             foreach ($request->file('images') as $image) {
@@ -165,19 +184,26 @@ class AdminProductController extends Controller
             $validated['images'] = $existingImages;
         }
 
-        // Remove non-model fields
         unset($validated['discount_active'], $validated['discount_percentage'], $validated['discount_fixed'], $validated['discount_start'], $validated['discount_end'], $validated['campaign_name']);
 
         $product->update($validated);
+
+        ActivityLog::log('update', 'Product', $product->name);
 
         return redirect()->route('admin.products.index')->with('success', 'Product updated successfully.');
     }
 
     public function destroy(string $id)
     {
-        $product = Product::findOrFail($id);
+        $product = $this->findProduct($id);
+        $name = $product->name;
         $product->delete();
+
+        ActivityLog::log('delete', 'Product', $name);
 
         return redirect()->route('admin.products.index')->with('success', 'Product deleted successfully.');
     }
+
+   
+
 }

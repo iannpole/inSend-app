@@ -113,13 +113,18 @@
             
             <!-- Search -->
             <div class="hidden md:flex items-center flex-1 max-w-md">
-                <div class="relative w-full">
+                <div class="relative w-full" id="global-search-container">
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
-                    <input type="text" class="block w-full pl-10 pr-12 py-2.5 border-0 rounded-full bg-white shadow-sm text-sm placeholder-gray-400 focus:ring-2 focus:ring-[#00473B] focus:border-transparent transition-shadow" placeholder="Search task, order, or product...">
+                    <input type="text" id="global-search-input" class="block w-full pl-10 pr-12 py-2.5 border-0 rounded-full bg-white shadow-sm text-sm placeholder-gray-400 focus:ring-2 focus:ring-[#00473B] focus:border-transparent transition-shadow" placeholder="Search task, order, or product..." autocomplete="off">
                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         <kbd class="hidden sm:inline-block border border-gray-200 rounded px-1.5 text-[10px] font-sans font-medium text-gray-400">⌘F</kbd>
+                    </div>
+                    
+                    <!-- Search Results Dropdown -->
+                    <div id="search-results" class="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-lg border border-gray-100 hidden z-50 max-h-96 overflow-y-auto">
+                        <!-- Results will be injected here -->
                     </div>
                 </div>
             </div>
@@ -223,6 +228,56 @@
                 title: "{{ session('success') }}"
             });
         @endif
+
+        // Global Search Logic
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('global-search-input');
+            const searchResults = document.getElementById('search-results');
+            let debounceTimer;
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(debounceTimer);
+                    const query = this.value.trim();
+                    
+                    if (query.length < 2) {
+                        searchResults.classList.add('hidden');
+                        return;
+                    }
+
+                    debounceTimer = setTimeout(() => {
+                        fetch(`/admin/search?q=${encodeURIComponent(query)}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                searchResults.innerHTML = '';
+                                if (data.length === 0) {
+                                    searchResults.innerHTML = '<div class="p-4 text-sm text-gray-500 text-center">No results found</div>';
+                                } else {
+                                    data.forEach(item => {
+                                        searchResults.innerHTML += `
+                                            <a href="${item.url}" class="flex items-center gap-3 p-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors group">
+                                                <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-lg">${item.icon}</div>
+                                                <div>
+                                                    <h4 class="text-sm font-bold text-gray-900 group-hover:text-[#115E3B] transition-colors">${item.title}</h4>
+                                                    <p class="text-[10px] text-gray-400">${item.type}</p>
+                                                </div>
+                                            </a>
+                                        `;
+                                    });
+                                }
+                                searchResults.classList.remove('hidden');
+                            });
+                    }, 300);
+                });
+
+                // Close on click outside
+                document.addEventListener('click', function(e) {
+                    if (!document.getElementById('global-search-container').contains(e.target)) {
+                        searchResults.classList.add('hidden');
+                    }
+                });
+            }
+        });
     </script>
 
     @stack('scripts')

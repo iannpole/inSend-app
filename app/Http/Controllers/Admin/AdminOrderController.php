@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 
 class AdminOrderController extends Controller
@@ -36,6 +37,8 @@ class AdminOrderController extends Controller
         ]);
 
         $order->update($validated);
+
+        ActivityLog::log('update', 'Order', 'Order #' . substr($order->id, -6), 'Status changed to ' . $validated['status']);
 
         return redirect()->route('admin.orders.show', $order->id)->with('success', 'Order status updated successfully.');
     }

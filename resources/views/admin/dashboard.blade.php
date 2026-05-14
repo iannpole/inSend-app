@@ -13,7 +13,7 @@
             <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
             Add Product
         </a>
-        <button class="inline-flex items-center justify-center px-5 py-2.5 rounded-full border border-gray-300 text-gray-700 bg-white text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm">
+        <button onclick="document.getElementById('export-modal').classList.remove('hidden')" class="inline-flex items-center justify-center px-5 py-2.5 rounded-full border border-gray-300 text-gray-700 bg-white text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm">
             Export Data
         </button>
     </div>
@@ -99,94 +99,23 @@
                 <h3 class="text-lg font-bold text-gray-900 tracking-tight">Sales Analytics</h3>
             </div>
             <div class="h-48 flex items-end justify-between gap-2 px-2">
-                <!-- Mock Bar Chart -->
-                <div class="w-full flex flex-col items-center gap-2">
-                    <div class="w-full bg-gray-100 rounded-full h-24 relative overflow-hidden">
-                        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0wIDBsOCA4TTAgOGw4LThNMCA0bDggMCIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiLz48L3N2Zz4=')] opacity-50"></div>
+                @foreach($salesAnalytics as $data)
+                    @php
+                        $percentage = $maxSales > 0 ? round(($data['total'] / $maxSales) * 100) : 0;
+                        $height = max($percentage, 5); // Minimum 5% height
+                    @endphp
+                    <div class="w-full flex flex-col items-center gap-2">
+                        <div class="w-full bg-[#115E3B] rounded-full relative group transition-all duration-300" style="height: {{ $height }}%">
+                            <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                                Rp {{ number_format($data['total'], 0, ',', '.') }}
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-400 font-medium">{{ substr($data['day'], 0, 1) }}</span>
                     </div>
-                    <span class="text-xs text-gray-400 font-medium">S</span>
-                </div>
-                <div class="w-full flex flex-col items-center gap-2">
-                    <div class="w-full bg-[#115E3B] rounded-full h-32"></div>
-                    <span class="text-xs text-gray-400 font-medium">M</span>
-                </div>
-                <div class="w-full flex flex-col items-center gap-2">
-                    <div class="w-full bg-[#41B06E] rounded-full h-40 relative flex justify-center">
-                        <div class="absolute -top-6 bg-white border border-gray-100 shadow-sm text-[10px] font-bold px-2 py-0.5 rounded-full text-gray-700">74%</div>
-                    </div>
-                    <span class="text-xs text-gray-400 font-medium">T</span>
-                </div>
-                <div class="w-full flex flex-col items-center gap-2">
-                    <div class="w-full bg-[#0A4027] rounded-full h-48"></div>
-                    <span class="text-xs text-gray-400 font-medium">W</span>
-                </div>
-                <div class="w-full flex flex-col items-center gap-2">
-                    <div class="w-full bg-gray-100 rounded-full h-28 relative overflow-hidden">
-                        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0wIDBsOCA4TTAgOGw4LThNMCA0bDggMCIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiLz48L3N2Zz4=')] opacity-50"></div>
-                    </div>
-                    <span class="text-xs text-gray-400 font-medium">T</span>
-                </div>
-                <div class="w-full flex flex-col items-center gap-2">
-                    <div class="w-full bg-gray-100 rounded-full h-20 relative overflow-hidden">
-                        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0wIDBsOCA4TTAgOGw4LThNMCA0bDggMCIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiLz48L3N2Zz4=')] opacity-50"></div>
-                    </div>
-                    <span class="text-xs text-gray-400 font-medium">F</span>
-                </div>
-                <div class="w-full flex flex-col items-center gap-2">
-                    <div class="w-full bg-gray-100 rounded-full h-24 relative overflow-hidden">
-                        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0wIDBsOCA4TTAgOGw4LThNMCA0bDggMCIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiLz48L3N2Zz4=')] opacity-50"></div>
-                    </div>
-                    <span class="text-xs text-gray-400 font-medium">S</span>
-                </div>
+                @endforeach
             </div>
         </div>
-
-        <!-- 2 Column sub-grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Team Collaboration (Latest Users) -->
-            <div class="bg-white rounded-[24px] p-6 border border-gray-100 shadow-sm flex flex-col h-[280px]">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-lg font-bold text-gray-900 tracking-tight">New Users</h3>
-                    <button class="text-xs font-semibold text-gray-500 border border-gray-200 px-3 py-1.5 rounded-full hover:bg-gray-50">
-                        + Add Member
-                    </button>
-                </div>
-                <div class="flex-1 overflow-y-auto space-y-4 pr-2">
-                    <!-- User 1 -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-xl">👨🏼‍🦱</div>
-                            <div>
-                                <h4 class="text-sm font-bold text-gray-900 leading-tight">Alexandra Deff</h4>
-                                <p class="text-[10px] text-gray-400">Registered recently</p>
-                            </div>
-                        </div>
-                        <span class="px-2.5 py-1 bg-green-50 text-green-600 text-[10px] font-bold rounded-md border border-green-100">Completed</span>
-                    </div>
-                    <!-- User 2 -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-xl">🧔🏻‍♂️</div>
-                            <div>
-                                <h4 class="text-sm font-bold text-gray-900 leading-tight">Edwin Adenike</h4>
-                                <p class="text-[10px] text-gray-400">Registered today</p>
-                            </div>
-                        </div>
-                        <span class="px-2.5 py-1 bg-yellow-50 text-yellow-600 text-[10px] font-bold rounded-md border border-yellow-100">In Progress</span>
-                    </div>
-                    <!-- User 3 -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-xl">👱🏼‍♂️</div>
-                            <div>
-                                <h4 class="text-sm font-bold text-gray-900 leading-tight">Isaac Oluwatemilorun</h4>
-                                <p class="text-[10px] text-gray-400">Profile incomplete</p>
-                            </div>
-                        </div>
-                        <span class="px-2.5 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded-md border border-red-100">Pending</span>
-                    </div>
-                </div>
-            </div>
+          
 
             <!-- Project Progress (Status Chart) -->
             <div class="bg-white rounded-[24px] p-6 border border-gray-100 shadow-sm flex flex-col h-[280px]">
@@ -199,14 +128,14 @@
                         <div class="absolute top-0 left-0 w-40 h-40 rounded-full border-[16px] border-[#41B06E] border-l-transparent border-t-transparent border-b-transparent transform -rotate-45"></div>
                     </div>
                     <div class="absolute bottom-10 flex flex-col items-center">
-                        <span class="text-3xl font-bold text-gray-900">41%</span>
+                        <span class="text-3xl font-bold text-gray-900">{{ $orderProgress['completed'] }}%</span>
                         <span class="text-[10px] text-gray-400 font-medium">Orders Delivered</span>
                     </div>
                 </div>
                 <div class="flex justify-center gap-4 mt-2">
-                    <div class="flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full bg-[#115E3B]"></div><span class="text-[10px] text-gray-500 font-medium">Completed</span></div>
-                    <div class="flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full bg-[#41B06E]"></div><span class="text-[10px] text-gray-500 font-medium">In Progress</span></div>
-                    <div class="flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full bg-gray-200"></div><span class="text-[10px] text-gray-500 font-medium">Pending</span></div>
+                    <div class="flex items-center gap-1.5" title="{{ $orderProgress['completed'] }}%"><div class="w-2.5 h-2.5 rounded-full bg-[#115E3B]"></div><span class="text-[10px] text-gray-500 font-medium">Completed</span></div>
+                    <div class="flex items-center gap-1.5" title="{{ $orderProgress['in_progress'] }}%"><div class="w-2.5 h-2.5 rounded-full bg-[#41B06E]"></div><span class="text-[10px] text-gray-500 font-medium">In Progress</span></div>
+                    <div class="flex items-center gap-1.5" title="{{ $orderProgress['pending'] }}%"><div class="w-2.5 h-2.5 rounded-full bg-gray-200"></div><span class="text-[10px] text-gray-500 font-medium">Pending</span></div>
                 </div>
             </div>
         </div>
@@ -276,30 +205,83 @@
             </div>
         </div>
 
-        <!-- Time Tracker (Dark Card) -->
-        <div class="bg-gradient-to-br from-[#0B2519] to-[#04110A] rounded-[24px] p-6 text-white relative shadow-md overflow-hidden">
-            <!-- Wavy background mock -->
-            <div class="absolute bottom-0 left-0 w-full h-1/2 opacity-30">
-                 <svg viewBox="0 0 100 50" preserveAspectRatio="none" class="w-full h-full text-[#41B06E]">
-                    <path d="M0,50 C20,20 40,60 60,30 C80,0 100,40 100,50 Z" fill="currentColor" />
-                 </svg>
+        <!-- Recent Activity Logs -->
+         
+        <div class="bg-white rounded-[24px] p-6 border border-gray-100 shadow-sm flex flex-col h-[380px]">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-gray-900 tracking-tight">Recent Activity</h3>
             </div>
             
-            <div class="relative z-10 flex flex-col items-center justify-center py-2">
-                <p class="text-sm text-gray-300 font-medium mb-1 w-full text-left">Time Tracker</p>
-                <div class="text-4xl font-light tracking-wider my-4">
-                    01:24:08
+            <div class="flex-1 overflow-y-auto pr-2 space-y-4">
+                @forelse($activities as $activity)
+                    @php
+                        $iconColors = [
+                            'create' => 'text-green-500 bg-green-50',
+                            'update' => 'text-blue-500 bg-blue-50',
+                            'delete' => 'text-red-500 bg-red-50',
+                        ];
+                        $iconColor = $iconColors[$activity->action] ?? 'text-gray-500 bg-gray-50';
+                        
+                        $icons = [
+                            'create' => 'M12 4v16m8-8H4', // Plus
+                            'update' => 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z', // Edit
+                            'delete' => 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16' // Trash
+                        ];
+                        $iconPath = $icons[$activity->action] ?? 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z';
+                    @endphp
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 {{ $iconColor }}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $iconPath }}"></path></svg>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-900">
+                                <span class="font-semibold">{{ $activity->user_name }}</span> 
+                                {{ $activity->action }}d {{ $activity->model_type }} 
+                                <span class="font-medium text-gray-700">{{ $activity->model_name }}</span>
+                            </p>
+                            @if($activity->details)
+                            <p class="text-[11px] text-gray-500 mt-0.5">{{ $activity->details }}</p>
+                            @endif
+                            <p class="text-[10px] text-gray-400 mt-1">{{ $activity->created_at->diffForHumans() }}</p>
+                        </div>
+                    </div>
+                @empty
+                    <div class="flex flex-col items-center justify-center h-full text-gray-400">
+                        <p class="text-sm">No recent activity</p>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Modal -->
+<div id="export-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-lg w-full max-w-md p-6 relative">
+        <button onclick="document.getElementById('export-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Export Orders (XLSX)</h2>
+        <form action="{{ route('admin.export.orders') }}" method="POST">
+            @csrf
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                    <input type="date" name="start_date" class="w-full rounded-xl border border-gray-200 px-4 py-2 text-sm focus:ring-[#115E3B] focus:border-[#115E3B]">
                 </div>
-                <div class="flex gap-4">
-                    <button class="w-10 h-10 rounded-full bg-white text-[#0B2519] flex items-center justify-center hover:scale-105 transition-transform">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
-                    </button>
-                    <button class="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center hover:scale-105 transition-transform shadow-[0_0_15px_rgba(239,68,68,0.5)]">
-                        <div class="w-3.5 h-3.5 bg-white rounded-sm"></div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                    <input type="date" name="end_date" class="w-full rounded-xl border border-gray-200 px-4 py-2 text-sm focus:ring-[#115E3B] focus:border-[#115E3B]">
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="document.getElementById('export-modal').classList.add('hidden')" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition">Cancel</button>
+                    <button type="submit" onclick="setTimeout(() => document.getElementById('export-modal').classList.add('hidden'), 500)" class="flex-1 px-4 py-2 bg-[#115E3B] text-white rounded-xl font-semibold hover:bg-[#0A4027] transition flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Download XLSX
                     </button>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
 </div>
 @endsection
