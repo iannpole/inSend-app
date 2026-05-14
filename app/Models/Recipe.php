@@ -28,11 +28,6 @@ class Recipe extends Model
     ];
 
     protected $casts = [
-        'ingredients'  => 'array',
-        'steps'        => 'array',
-        'images'       => 'array',
-        'tags'         => 'array',
-        'nutrition'    => 'array',
         'prep_time'    => 'integer',
         'cook_time'    => 'integer',
         'servings'     => 'integer',

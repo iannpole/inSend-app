@@ -51,51 +51,53 @@ class AiController extends Controller
             ]);
         }
 
-        // Build parts untuk Gemini
+        // Build parts untuk user message (TANPA system prompt)
         $parts = [];
 
         // Handle image upload (Vision)
-        $imageUrl     = null;
-        $imageBase64  = null;
-        $imageMime    = null;
+        $imageUrl = null;
 
         if ($request->hasFile('image')) {
-            $file        = $request->file('image');
-            $path        = $file->store('ai-images', 'public');
-            $imageUrl    = asset('storage/' . $path);
-            $imageBase64 = base64_encode(file_get_contents($file->getRealPath()));
-            $imageMime   = $file->getMimeType();
+            $file      = $request->file('image');
+            $path      = $file->store('ai-images', 'public');
+            $imageUrl  = asset('storage/' . $path);
 
             $parts[] = [
                 'inline_data' => [
-                    'mime_type' => $imageMime,
-                    'data'      => $imageBase64,
+                    'mime_type' => $file->getMimeType(),
+                    'data'      => base64_encode(file_get_contents($file->getRealPath())),
                 ],
             ];
         }
 
-        // Cari resep relevan dari MongoDB (RAG)
+        // RAG context masuk ke user message (dinamis per request)
         $recipeContext = $this->getRecipeContext($message, $servings);
 
-        // Build system prompt
-        $systemPrompt = $this->buildSystemPrompt($recipeContext, $servings, $mode, $request->hasFile('image'));
-
-        // Gabungkan teks prompt
-        $userText = $systemPrompt;
+        // User text = RAG context + pesan user (system prompt TERPISAH)
+        $userText = '';
+        if ($recipeContext !== '') {
+            $userText .= "[REFERENSI PRODUK & RESEP INSEND]\n{$recipeContext}\n\n";
+        }
         if (!empty($message)) {
-            $userText .= "\n\nPermintaan pengguna: {$message}";
+            $userText .= $message;
         }
         if ($request->hasFile('image') && empty($message)) {
-            $userText .= "\n\nAnalisa gambar yang diupload dan buat resep yang sesuai.";
+            $userText .= 'Analisa gambar yang diupload dan buat resep yang sesuai.';
         }
 
         $parts[] = ['text' => $userText];
 
-        // Build Gemini API request dengan history conversation
+        // Build system prompt (statis, personality + aturan)
+        $systemPrompt = $this->buildSystemPrompt($servings, $mode, $request->hasFile('image'));
+
+        // Build Gemini contents dengan history
         $contents = $this->buildContents($conversation, $parts);
 
-        // Panggil Gemini API
-        $response = $this->callGemini($contents);
+        // Tentukan max tokens berdasarkan mode
+        $maxTokens = $mode === 'recipe' || $request->hasFile('image') ? 1500 : 1024;
+
+        // Panggil Gemini API dengan system_instruction terpisah
+        $response = $this->callGemini($contents, $systemPrompt, $maxTokens, $mode);
 
         if (!$response['success']) {
             Log::error('Gemini API Error', ['error' => $response['error']]);
@@ -112,8 +114,8 @@ class AiController extends Controller
         $conversation->addMessage('model', $aiReply);
 
         return response()->json([
-            'message'         => 'Berhasil',
-            'data'            => [
+            'message' => 'Berhasil',
+            'data'    => [
                 'conversation_id' => (string) $conversation->_id,
                 'reply'           => $aiReply,
                 'image_url'       => $imageUrl,
@@ -201,77 +203,72 @@ class AiController extends Controller
 
     /**
      * Cari resep relevan di MongoDB berdasarkan keyword (RAG)
+     * Hanya kirim field yang diperlukan untuk menghemat token
      */
     private function getRecipeContext(string $message, int $servings): string
     {
         if (empty($message)) {
-            // Jika tidak ada pesan (hanya foto), ambil 3 resep populer sebagai inspirasi
-            $recipes = Recipe::published()->limit(3)->get();
+            $recipes = Recipe::published()->limit(3)->get(['title', 'category', 'ingredients', 'tags']);
         } else {
-            $recipes = Recipe::published()->search($message)->limit(5)->get();
+            $recipes = Recipe::published()->search($message)->limit(5)->get(['title', 'category', 'ingredients', 'tags']);
             if ($recipes->isEmpty()) {
-                $recipes = Recipe::published()->limit(3)->get();
+                $recipes = Recipe::published()->limit(3)->get(['title', 'category', 'ingredients', 'tags']);
             }
         }
 
         if ($recipes->isEmpty()) {
-            return 'Tidak ada resep referensi tersedia.';
+            return '';
         }
 
-        $context = "RESEP REFERENSI DARI DATABASE INSEND:\n";
+        $context = '';
         foreach ($recipes as $i => $recipe) {
-            $context .= "\n--- Resep " . ($i + 1) . ": {$recipe->title} ---\n";
-            $context .= "Kategori: {$recipe->category}\n";
-            $context .= "Bahan: " . collect($recipe->ingredients)->pluck('name')->join(', ') . "\n";
-            if ($recipe->tags) {
-                $context .= "Tags: " . implode(', ', $recipe->tags) . "\n";
+            $ingredients = collect($recipe->ingredients)->pluck('name')->join(', ');
+            $tags = $recipe->tags ? implode(', ', $recipe->tags) : '';
+            $context .= ($i + 1) . ". {$recipe->title} [{$recipe->category}] — Bahan: {$ingredients}";
+            if ($tags) {
+                $context .= " | Tags: {$tags}";
             }
+            $context .= "\n";
         }
 
         return $context;
     }
 
     /**
-     * Build system prompt Insend AI
+     * Build system prompt (STATIS — personality + aturan + format)
+     * Ini masuk ke system_instruction, BUKAN ke user message
      */
-    private function buildSystemPrompt(string $recipeContext, int $servings, string $mode, bool $hasImage): string
+    private function buildSystemPrompt(int $servings, string $mode, bool $hasImage): string
     {
-        $basePersonality = "Kamu adalah Insend AI, asisten kuliner cerdas dari aplikasi Insend. Kamu ahli dalam masakan Indonesia dan internasional, fokus pada resep praktis, bumbu yang tepat, dan takaran yang akurat.";
+        $base = 'Kamu adalah Insend AI, asisten kuliner eksklusif untuk aplikasi e-grocery Insend. Tugasmu HANYA memberikan resep dan merekomendasikan produk bahan makanan.';
 
         if ($mode === 'recipe' || $hasImage) {
             return <<<PROMPT
-{$basePersonality}
+{$base}
 
-{$recipeContext}
+ATURAN:
+1. JANGAN menjawab di luar topik makanan, resep, atau bahan masakan.
+2. Jika ada gambar, identifikasi bahan yang terlihat lalu buat resep.
+3. Gunakan referensi resep dari [REFERENSI PRODUK & RESEP INSEND] jika relevan.
+4. Sesuaikan takaran untuk {$servings} porsi.
+5. Selalu kembalikan respon dalam format JSON berikut:
 
-INSTRUKSIMU:
-1. Jika ada gambar, identifikasi bahan-bahan yang terlihat.
-2. Berdasarkan bahan yang diidentifikasi dan resep referensi di atas, buat resep lengkap untuk {$servings} orang.
-3. Format respon SELALU dalam struktur berikut:
-   🍽️ **Nama Resep**: [nama resep]
-   ⏱️ **Waktu Masak**: [estimasi]
-   👥 **Porsi**: {$servings} orang
-   
-   **Bahan-bahan:**
-   - [bahan] [takaran untuk {$servings} orang]
-   
-   **Cara Masak:**
-   1. [langkah pertama]
-   2. [langkah berikutnya]
-   ...
-   
-   💡 **Tips**: [tips masak]
-4. Gunakan takaran yang spesifik dan praktis (sendok makan, gram, ml, dll).
-5. Pastikan bumbu sesuai best practice masakan Indonesia.
+{"konteks":"Penjelasan singkat kenapa resep ini cocok","nama_resep":"...","waktu_masak":"...","porsi":{$servings},"bahan":[{"nama":"...","takaran":"...","keyword_insend":"kata kunci cari di Insend"}],"langkah":["Langkah 1","Langkah 2"],"tips":"..."}
 PROMPT;
         }
 
         return <<<PROMPT
-{$basePersonality}
+{$base}
 
-{$recipeContext}
+ATURAN:
+1. JANGAN menjawab di luar topik makanan, resep, atau bahan masakan.
+2. Jawab dengan ramah, informatif, dan ringkas.
+3. Jika diminta resep, sesuaikan untuk {$servings} porsi dan kembalikan dalam JSON:
 
-Jawab pertanyaan tentang masakan, resep, atau kuliner dengan ramah dan informatif. Jika diminta resep, gunakan referensi di atas dan sesuaikan untuk {$servings} orang.
+{"konteks":"...","nama_resep":"...","waktu_masak":"...","porsi":{$servings},"bahan":[{"nama":"...","takaran":"...","keyword_insend":"..."}],"langkah":["..."],"tips":"..."}
+
+4. Jika hanya ditanya tips/info umum kuliner, jawab dalam JSON:
+{"tipe":"info","jawaban":"..."}
 PROMPT;
     }
 
@@ -301,27 +298,39 @@ PROMPT;
     }
 
     /**
-     * Panggil Gemini REST API
+     * Panggil Gemini REST API dengan system_instruction terpisah
      */
-    private function callGemini(array $contents): array
+    private function callGemini(array $contents, string $systemPrompt, int $maxTokens, string $mode): array
     {
         try {
+            $payload = [
+                // System instruction TERPISAH dari contents — hemat token, lebih patuh
+                'system_instruction' => [
+                    'parts' => [['text' => $systemPrompt]],
+                ],
+                'contents'         => $contents,
+                'generationConfig' => [
+                    'temperature'      => 0.7,
+                    'maxOutputTokens'  => $maxTokens,
+                    'topP'             => 0.9,
+                    // Paksa output JSON untuk mode recipe, biarkan bebas untuk chat info
+                    'responseMimeType' => 'application/json',
+                ],
+                'safetySettings' => [
+                    ['category' => 'HARM_CATEGORY_HARASSMENT',  'threshold' => 'BLOCK_MEDIUM_AND_ABOVE'],
+                    ['category' => 'HARM_CATEGORY_HATE_SPEECH', 'threshold' => 'BLOCK_MEDIUM_AND_ABOVE'],
+                ],
+            ];
+
             $response = Http::withHeaders(['Content-Type' => 'application/json'])
                 ->timeout(60)
-                ->post("{$this->baseUrl}?key={$this->apiKey}", [
-                    'contents'         => $contents,
-                    'generationConfig' => [
-                        'temperature'     => 0.7,
-                        'maxOutputTokens' => 2048,
-                        'topP'            => 0.9,
-                    ],
-                    'safetySettings' => [
-                        ['category' => 'HARM_CATEGORY_HARASSMENT', 'threshold' => 'BLOCK_MEDIUM_AND_ABOVE'],
-                        ['category' => 'HARM_CATEGORY_HATE_SPEECH', 'threshold' => 'BLOCK_MEDIUM_AND_ABOVE'],
-                    ],
-                ]);
+                ->post("{$this->baseUrl}?key={$this->apiKey}", $payload);
 
             if (!$response->successful()) {
+                Log::warning('Gemini API non-200', [
+                    'status' => $response->status(),
+                    'body'   => Str::limit($response->body(), 500),
+                ]);
                 return ['success' => false, 'error' => $response->body()];
             }
 
@@ -330,6 +339,12 @@ PROMPT;
 
             if (!$text) {
                 return ['success' => false, 'error' => 'Empty response from Gemini'];
+            }
+
+            // Validasi JSON
+            json_decode($text);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                Log::warning('Gemini returned non-JSON', ['response' => Str::limit($text, 300)]);
             }
 
             return ['success' => true, 'text' => $text];
