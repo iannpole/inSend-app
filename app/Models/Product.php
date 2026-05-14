@@ -9,7 +9,18 @@ class Product extends Model
 {
     protected $connection = 'mongodb';
     protected $collection = 'products';
+    protected $primaryKey = '_id';
+    protected $keyType = 'string';
+    public $incrementing = false;
 
+    public function resolveRouteBinding($value, $field = null)
+    {
+        try {
+            return $this->where('_id', new ObjectId($value))->firstOrFail();
+        } catch (\Exception $e) {
+            abort(404);
+        }
+    }
     protected $fillable = [
         'slug',
         'name',

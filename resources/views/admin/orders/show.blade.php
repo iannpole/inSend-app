@@ -24,17 +24,19 @@
                     @foreach($order->items as $item)
                         <li class="flex justify-between items-start pb-4 border-b border-gray-50 last:border-0 last:pb-0">
                             <div>
-                                <p class="font-medium text-gray-900">{{ $item['name'] }}</p>
-                                <p class="text-sm text-gray-500 mt-0.5">{{ $item['qty'] }} x Rp {{ number_format($item['price'], 0, ',', '.') }}</p>
+                               <p class="font-medium text-gray-900">{{ $item['product_name_snapshot'] }}</p>
+                                <p class="text-sm text-gray-500 mt-0.5">
+                                    {{ $item['quantity'] }} x Rp {{ number_format($item['price_per_unit'], 0, ',', '.') }}
+                                </p>
                             </div>
-                            <span class="font-medium text-gray-900">Rp {{ number_format($item['subtotal'], 0, ',', '.') }}</span>
+                            <span class="font-medium text-gray-900">Rp {{ number_format($item['total_price'], 0, ',', '.') }}</span>
                         </li>
                     @endforeach
                 </ul>
                 <div class="mt-6 pt-6 border-t border-gray-100">
                     <div class="flex justify-between items-center text-lg font-bold text-gray-900">
                         <span>Total Price</span>
-                        <span>Rp {{ number_format($order->total_price, 0, ',', '.') }}</span>
+                        <span>Rp {{ number_format($order->grand_total, 0, ',', '.') }}</span>
                     </div>
                 </div>
             </div>

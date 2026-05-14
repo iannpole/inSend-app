@@ -28,8 +28,8 @@ class Order extends Model
     ];
 
     protected $casts = [
-        'items'            => 'array',
-        'shipping_address' => 'array',
+        //'items'            => 'array',
+        //'shipping_address' => 'array',
         'total_price'      => 'float',
         'paid_at'          => 'datetime',
     ];
@@ -37,6 +37,15 @@ class Order extends Model
     protected $attributes = [
         'status' => self::STATUS_PENDING,
     ];
+
+     public function get($model, $key, $value, $attributes): array
+    {
+        // Kalau sudah array (dari MongoDB), langsung return
+        if (is_array($value)) return $value;
+        
+        // Kalau string (dari MySQL/JSON), decode dulu
+        return json_decode($value, true) ?? [];
+    }
 
     public function user()
     {
