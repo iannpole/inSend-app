@@ -5,6 +5,9 @@ namespace App\Providers;
 use App\Models\PersonalAccessToken;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Sanctum\Sanctum;
+use App\Services\AI\AiServiceInterface;
+use App\Services\AI\RecipeBotService;
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -13,7 +16,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(AiServiceInterface::class, RecipeBotService::class);
     }
 
     /**
@@ -24,4 +27,6 @@ class AppServiceProvider extends ServiceProvider
         
         Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
     }
+
+
 }

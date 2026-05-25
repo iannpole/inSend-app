@@ -21,18 +21,25 @@ class User extends Authenticatable
         'phone',
         'address',
         'avatar',
-        'role', // 'user' | 'admin'
+        'role', // 'user' | 'admin' | 'driver'
+        'auth_provider',
+        'otp_code',
+        'otp_expires_at',
+        'email_verified_at',
+        'fcm_token',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'otp_code',
     ];
 
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
+            'otp_expires_at'    => 'datetime',
             'password'          => 'hashed',
         ];
     }
@@ -42,9 +49,29 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    public function isDriver(): bool
+    {
+        return $this->role === 'driver';
+    }
+
     public function orders()
     {
         return $this->hasMany(Order::class, 'user_id');
+    }
+
+    public function addresses()
+    {
+        return $this->hasMany(Address::class, 'user_id');
+    }
+
+    public function wishlists()
+    {
+        return $this->hasMany(Wishlist::class, 'user_id');
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class, 'user_id');
     }
 
     public function createToken(string $name, array $abilities = ['*'], \DateTimeInterface $expiresAt = null)

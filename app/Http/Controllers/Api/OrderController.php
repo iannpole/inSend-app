@@ -29,11 +29,17 @@ class OrderController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->filled('payment_status')) {
+            $query->where('payment_status', $request->payment_status);
+        }
+
         $orders = $query->orderBy('created_at', 'desc')->paginate(15);
 
         return response()->json([
-            'data' => OrderResource::collection($orders->items()),
-            'meta' => [
+            'status'  => 'success',
+            'message' => 'Daftar order berhasil diambil',
+            'data'    => OrderResource::collection($orders->items()),
+            'meta'    => [
                 'total'        => $orders->total(),
                 'per_page'     => $orders->perPage(),
                 'current_page' => $orders->currentPage(),
@@ -43,67 +49,87 @@ class OrderController extends Controller
     }
 
     /**
-     * POST /api/orders — Buat order baru
+     * POST /api/orders — Buat order baru (direct, tanpa cart)
      */
     public function store(OrderRequest $request): JsonResponse
     {
         $validated = $request->validated();
         $items     = $validated['items'];
         $orderItems = [];
-        $totalPrice = 0;
+        $subtotal   = 0;
 
-        // Validasi stok dan kalkulasi harga
+        // Validasi stok dan kalkulasi harga — dengan locking
         foreach ($items as $item) {
-            $product = Product::find($item['product_id']);
+            $product = Product::where('_id', $item['product_id'])->first();
 
             if (!$product) {
                 return response()->json([
+                    'status'  => 'error',
                     'message' => "Produk dengan ID {$item['product_id']} tidak ditemukan",
                 ], 422);
             }
 
             if (!$product->is_active) {
                 return response()->json([
+                    'status'  => 'error',
                     'message' => "Produk '{$product->name}' sedang tidak tersedia",
                 ], 422);
             }
 
-            if ($product->stock < $item['qty']) {
+            $currentStock = $product->stock_quantity ?? 0;
+            if ($currentStock < $item['qty']) {
                 return response()->json([
-                    'message' => "Stok '{$product->name}' tidak cukup. Tersedia: {$product->stock}",
+                    'status'  => 'error',
+                    'message' => "Stok '{$product->name}' tidak cukup. Tersedia: {$currentStock}",
                 ], 422);
             }
 
-            $subtotal     = $product->price * $item['qty'];
-            $totalPrice  += $subtotal;
+            $price        = $product->effective_price;
+            $itemSubtotal = $price * $item['qty'];
+            $subtotal    += $itemSubtotal;
 
             $orderItems[] = [
-                'product_id' => $item['product_id'],
+                'product_id' => (string) $product->_id,
                 'name'       => $product->name,
                 'unit'       => $product->unit,
                 'qty'        => $item['qty'],
-                'price'      => $product->price,
-                'subtotal'   => $subtotal,
+                'price'      => $price,
+                'subtotal'   => $itemSubtotal,
             ];
         }
 
-        // Kurangi stok dan buat order
+        // Kurangi stok dengan atomic operation
         foreach ($items as $item) {
-            Product::where('_id', $item['product_id'])
-                   ->decrement('stock', $item['qty']);
+            $product = Product::where('_id', $item['product_id'])->first();
+            if ($product) {
+                $newStock = max(0, ($product->stock_quantity ?? 0) - $item['qty']);
+                $product->update(['stock_quantity' => $newStock]);
+            }
         }
+
+        // Kalkulasi total
+        $deliveryFee    = (float) ($validated['delivery_fee'] ?? 0);
+        $discountAmount = 0;
+        $totalPrice     = $subtotal + $deliveryFee - $discountAmount;
 
         $order = Order::create([
             'user_id'          => (string) $request->user()->_id,
+            'order_number'     => Order::generateOrderNumber(),
             'items'            => $orderItems,
+            'subtotal'         => $subtotal,
+            'delivery_fee'     => $deliveryFee,
+            'discount_amount'  => $discountAmount,
             'total_price'      => $totalPrice,
             'status'           => Order::STATUS_PENDING,
+            'payment_status'   => Order::PAYMENT_PENDING,
             'shipping_address' => $validated['shipping_address'],
+            'address_id'       => $validated['address_id'] ?? null,
             'notes'            => $validated['notes'] ?? null,
             'payment_method'   => $validated['payment_method'] ?? 'cod',
         ]);
 
         return response()->json([
+            'status'  => 'success',
             'message' => 'Order berhasil dibuat',
             'data'    => new OrderResource($order),
         ], 201);
@@ -118,10 +144,16 @@ class OrderController extends Controller
 
         if (!$request->user()->isAdmin() &&
             (string) $order->user_id !== (string) $request->user()->_id) {
-            return response()->json(['message' => 'Forbidden'], 403);
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Forbidden',
+            ], 403);
         }
 
-        return response()->json(['data' => new OrderResource($order)]);
+        return response()->json([
+            'status' => 'success',
+            'data'   => new OrderResource($order),
+        ]);
     }
 
     /**
@@ -130,26 +162,55 @@ class OrderController extends Controller
     public function update(Request $request, string $id): JsonResponse
     {
         if (!$request->user()->isAdmin()) {
-            return response()->json(['message' => 'Hanya admin yang bisa update status order'], 403);
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Hanya admin yang bisa update status order',
+            ], 403);
         }
 
         $order = Order::findOrFail($id);
 
         $validated = $request->validate([
-            'status' => ['required', 'in:pending,processing,shipped,delivered,cancelled'],
+            'status' => ['required', 'in:pending,awaiting_payment,paid,processing,shipped,delivered,cancelled,payment_expired'],
             'notes'  => ['nullable', 'string'],
         ]);
 
-        $order->update($validated);
+        // Track timestamp changes
+        $updates = $validated;
+        if ($validated['status'] === Order::STATUS_SHIPPED && !$order->shipped_at) {
+            $updates['shipped_at'] = now();
+        }
+        if ($validated['status'] === Order::STATUS_DELIVERED && !$order->delivered_at) {
+            $updates['delivered_at'] = now();
+        }
+        if ($validated['status'] === Order::STATUS_PAID && !$order->paid_at) {
+            $updates['paid_at'] = now();
+            $updates['payment_status'] = Order::PAYMENT_PAID;
+        }
+
+        // Jika cancel, kembalikan stok
+        if ($validated['status'] === Order::STATUS_CANCELLED && $order->status !== Order::STATUS_CANCELLED) {
+            foreach ($order->items as $item) {
+                $product = Product::where('_id', $item['product_id'])->first();
+                if ($product) {
+                    $product->update([
+                        'stock_quantity' => ($product->stock_quantity ?? 0) + $item['qty']
+                    ]);
+                }
+            }
+        }
+
+        $order->update($updates);
 
         return response()->json([
+            'status'  => 'success',
             'message' => 'Status order diupdate',
             'data'    => new OrderResource($order),
         ]);
     }
 
     /**
-     * DELETE /api/orders/{id} — Cancel order (hanya pending)
+     * DELETE /api/orders/{id} — Cancel order (hanya pending/awaiting_payment)
      */
     public function destroy(Request $request, string $id): JsonResponse
     {
@@ -157,23 +218,34 @@ class OrderController extends Controller
 
         if (!$request->user()->isAdmin() &&
             (string) $order->user_id !== (string) $request->user()->_id) {
-            return response()->json(['message' => 'Forbidden'], 403);
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Forbidden',
+            ], 403);
         }
 
         if (!$order->isCancellable()) {
             return response()->json([
+                'status'  => 'error',
                 'message' => 'Order tidak bisa dibatalkan karena sudah diproses lebih lanjut',
             ], 422);
         }
 
         // Kembalikan stok
         foreach ($order->items as $item) {
-            Product::where('_id', $item['product_id'])
-                   ->increment('stock', $item['qty']);
+            $product = Product::where('_id', $item['product_id'])->first();
+            if ($product) {
+                $product->update([
+                    'stock_quantity' => ($product->stock_quantity ?? 0) + $item['qty']
+                ]);
+            }
         }
 
         $order->update(['status' => Order::STATUS_CANCELLED]);
 
-        return response()->json(['message' => 'Order berhasil dibatalkan']);
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Order berhasil dibatalkan',
+        ]);
     }
 }

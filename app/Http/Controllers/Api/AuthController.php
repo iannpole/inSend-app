@@ -10,6 +10,13 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use App\Mail\OtpMail;
+use Firebase\JWT\JWT;
+use Firebase\JWT\JWK;
+use Exception;
 
 class AuthController extends Controller
 {
@@ -18,6 +25,8 @@ class AuthController extends Controller
      */
     public function register(RegisterRequest $request): JsonResponse
     {
+        $otp = sprintf("%06d", mt_rand(1, 999999));
+
         $user = User::create([
             'name'     => $request->name,
             'email'    => $request->email,
@@ -25,14 +34,20 @@ class AuthController extends Controller
             'phone'    => $request->phone,
             'address'  => $request->address,
             'role'     => 'user',
+            'otp_code' => $otp,
+            'otp_expires_at' => now()->addMinutes(10),
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        try {
+            Mail::to($user->email)->send(new OtpMail($otp, $user->name));
+        } catch (Exception $e) {
+            // Bisa log error di sini, tapi lanjutkan saja
+        }
 
         return response()->json([
-            'message' => 'Registrasi berhasil',
-            'user'    => new UserResource($user),
-            'token'   => $token,
+            'message' => 'Registrasi berhasil. Silakan cek email Anda untuk kode verifikasi (OTP).',
+            'require_verification' => true,
+            'email'   => $user->email,
         ], 201);
     }
 
@@ -49,6 +64,15 @@ class AuthController extends Controller
             ], 401);
         }
 
+        // Cek verifikasi email (kecuali user login via provider social sebelumnya)
+        if (!$user->email_verified_at && !$user->auth_provider) {
+            return response()->json([
+                'message' => 'Email belum diverifikasi. Silakan cek email Anda atau minta kode OTP baru.',
+                'require_verification' => true,
+                'email' => $user->email,
+            ], 403);
+        }
+
         // Hapus token lama (opsional, untuk single session)
         $user->tokens()->delete();
 
@@ -59,6 +83,174 @@ class AuthController extends Controller
             'user'    => new UserResource($user),
             'token'   => $token,
         ]);
+    }
+
+    /**
+     * POST /api/auth/verify-email
+     */
+    public function verifyEmail(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp_code' => 'required|string',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'User tidak ditemukan'], 404);
+        }
+
+        if ($user->otp_code !== $request->otp_code) {
+            return response()->json(['message' => 'Kode OTP tidak valid'], 400);
+        }
+
+        if (now()->greaterThan($user->otp_expires_at)) {
+            return response()->json(['message' => 'Kode OTP sudah kadaluarsa. Silakan minta ulang.'], 400);
+        }
+
+        // Sukses verifikasi
+        $user->update([
+            'email_verified_at' => now(),
+            'otp_code' => null,
+            'otp_expires_at' => null,
+        ]);
+
+        // Langsung berikan token login
+        $user->tokens()->delete();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Verifikasi email berhasil. Anda sudah login.',
+            'user'    => new UserResource($user),
+            'token'   => $token,
+        ]);
+    }
+
+    /**
+     * POST /api/auth/resend-otp
+     */
+    public function resendOtp(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'User tidak ditemukan'], 404);
+        }
+
+        if ($user->email_verified_at) {
+            return response()->json(['message' => 'Email sudah diverifikasi'], 400);
+        }
+
+        $otp = sprintf("%06d", mt_rand(1, 999999));
+        $user->update([
+            'otp_code' => $otp,
+            'otp_expires_at' => now()->addMinutes(10),
+        ]);
+
+        try {
+            Mail::to($user->email)->send(new OtpMail($otp, $user->name));
+            return response()->json([
+                'message' => 'Kode OTP baru telah dikirim ke email Anda.',
+            ]);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Gagal mengirim email. Pastikan konfigurasi SMTP benar.', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * POST /api/auth/social-login
+     */
+    public function socialLogin(Request $request): JsonResponse
+    {
+        $request->validate([
+            'provider' => 'required|in:google,apple',
+            'token'    => 'required|string',
+            'name'     => 'nullable|string',
+            'email'    => 'nullable|email',
+        ]);
+
+        $provider = $request->provider;
+        $token = $request->token;
+        
+        $verifiedEmail = null;
+        $verifiedName = $request->name;
+
+        try {
+            if ($provider === 'google') {
+                // Verify Google token
+                $response = Http::get('https://oauth2.googleapis.com/tokeninfo', [
+                    'id_token' => $token
+                ]);
+
+                if ($response->failed()) {
+                    return response()->json(['message' => 'Invalid Google token'], 401);
+                }
+
+                $payload = $response->json();
+                $verifiedEmail = $payload['email'] ?? null;
+                
+                if (empty($verifiedName) && isset($payload['name'])) {
+                    $verifiedName = $payload['name'];
+                }
+            } elseif ($provider === 'apple') {
+                // Verify Apple token
+                $jwksUrl = 'https://appleid.apple.com/auth/keys';
+                $keysResponse = Http::get($jwksUrl);
+                
+                if ($keysResponse->failed()) {
+                    return response()->json(['message' => 'Failed to fetch Apple keys'], 500);
+                }
+                
+                $jwks = $keysResponse->json();
+                $parsedKeys = JWK::parseKeySet($jwks);
+                
+                $decoded = JWT::decode($token, $parsedKeys);
+                
+                if ($decoded->iss !== 'https://appleid.apple.com') {
+                    return response()->json(['message' => 'Invalid Apple token issuer'], 401);
+                }
+                
+                $verifiedEmail = $decoded->email ?? $request->email;
+            }
+
+            if (!$verifiedEmail) {
+                return response()->json(['message' => 'Email not provided by provider'], 400);
+            }
+
+            // Find or create user
+            $user = User::where('email', $verifiedEmail)->first();
+
+            if (!$user) {
+                // Create new user if not exists
+                $user = User::create([
+                    'name' => $verifiedName ?? explode('@', $verifiedEmail)[0],
+                    'email' => $verifiedEmail,
+                    'password' => Hash::make(Str::random(24)),
+                    'role' => 'user',
+                ]);
+            }
+
+            // Generate token
+            $user->tokens()->delete();
+            $authToken = $user->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'message' => 'Login berhasil',
+                'user'    => new UserResource($user),
+                'token'   => $authToken,
+            ]);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Token verification failed',
+                'error' => $e->getMessage()
+            ], 401);
+        }
     }
 
     /**

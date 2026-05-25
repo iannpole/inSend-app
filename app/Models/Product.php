@@ -29,24 +29,33 @@ class Product extends Model
         'sale_price',
         'discount_info',
         'stock_quantity',
+        'low_stock_threshold',
         'unit',
         'description',
         'images',
         'attributes',
         'tags',
         'is_active',
+        'average_rating',
+        'review_count',
     ];
 
     protected $casts = [
-        'base_price'     => 'float',
-        'sale_price'     => 'float',
-        'stock_quantity'  => 'integer',
-        'is_active'      => 'boolean',
+        'base_price'          => 'float',
+        'sale_price'          => 'float',
+        'stock_quantity'      => 'integer',
+        'low_stock_threshold' => 'integer',
+        'is_active'           => 'boolean',
+        'average_rating'      => 'float',
+        'review_count'        => 'integer',
     ];
 
     protected $attributes = [
-        'is_active' => true,
-        'images'    => [],
+        'is_active'           => true,
+        'images'              => [],
+        'low_stock_threshold' => 10,
+        'average_rating'      => 0,
+        'review_count'        => 0,
     ];
 
     // ─── Accessors ───────────────────────────────────────────
@@ -143,5 +152,55 @@ class Product extends Model
     public function scopeByCategory($query, string $categorySlug)
     {
         return $query->where('category_slug', $categorySlug);
+    }
+
+    /**
+     * Scope: products with low stock
+     */
+    public function scopeLowStock($query)
+    {
+        return $query->whereRaw([
+            '$expr' => [
+                '$lte' => ['$stock_quantity', '$low_stock_threshold']
+            ]
+        ]);
+    }
+
+    /**
+     * Scope: in-stock products only
+     */
+    public function scopeInStock($query)
+    {
+        return $query->where('stock_quantity', '>', 0);
+    }
+
+    // ─── Inventory Helpers ──────────────────────────────────
+
+    /**
+     * Check if product is low on stock
+     */
+    public function isLowStock(): bool
+    {
+        return ($this->stock_quantity ?? 0) <= ($this->low_stock_threshold ?? 10);
+    }
+
+    /**
+     * Check if product is out of stock
+     */
+    public function isOutOfStock(): bool
+    {
+        return ($this->stock_quantity ?? 0) <= 0;
+    }
+
+    // ─── Relations ──────────────────────────────────────────
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class, 'product_id');
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category_slug', 'slug');
     }
 }

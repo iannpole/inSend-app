@@ -18,12 +18,19 @@ class OrderRequest extends FormRequest
             'items.*.product_id'              => ['required', 'string'],
             'items.*.qty'                     => ['required', 'integer', 'min:1'],
             'shipping_address'                => ['required', 'array'],
+            'shipping_address.recipient_name' => ['required', 'string'],
+            'shipping_address.phone'          => ['required', 'string'],
             'shipping_address.street'         => ['required', 'string'],
             'shipping_address.city'           => ['required', 'string'],
             'shipping_address.province'       => ['required', 'string'],
             'shipping_address.postal_code'    => ['required', 'string'],
+            'shipping_address.lat'            => ['nullable', 'numeric'],
+            'shipping_address.lng'            => ['nullable', 'numeric'],
+            'address_id'                      => ['nullable', 'string'],
             'notes'                           => ['nullable', 'string', 'max:500'],
-            'payment_method'                  => ['nullable', 'string', 'in:cod,transfer,qris'],
+            'payment_method'                  => ['nullable', 'string', 'in:cod,bank_transfer,qris,gopay,ovo'],
+            'delivery_fee'                    => ['nullable', 'numeric', 'min:0'],
+            'promo_code'                      => ['nullable', 'string', 'max:50'],
         ];
     }
 }

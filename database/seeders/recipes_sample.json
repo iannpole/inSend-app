@@ -1,0 +1,298 @@
+[
+  {
+    "title": "Es Teh Lemon Segar",
+    "description": "Minuman teh dingin dengan perasan lemon segar, sempurna untuk cuaca panas. Manis, asam, dan menyegarkan!",
+    "category": "minuman",
+    "difficulty": "easy",
+    "prep_time": 10,
+    "cook_time": 5,
+    "servings": 2,
+    "is_published": true,
+    "source": "manual",
+    "tags": ["es", "segar", "dingin", "minuman", "teh", "lemon", "panas", "summer"],
+    "images": [],
+    "ingredients": [
+      { "name": "Teh celup", "amount": 2, "unit": "kantong" },
+      { "name": "Air panas", "amount": 400, "unit": "ml" },
+      { "name": "Lemon", "amount": 1, "unit": "buah" },
+      { "name": "Gula pasir", "amount": 3, "unit": "sdm" },
+      { "name": "Es batu", "amount": 200, "unit": "gram" },
+      { "name": "Air dingin", "amount": 200, "unit": "ml" }
+    ],
+    "steps": [
+      { "order": 1, "instruction": "Seduh 2 kantong teh celup dengan 400ml air panas. Diamkan 5 menit.", "duration_minutes": 5 },
+      { "order": 2, "instruction": "Larutkan gula ke dalam teh panas, aduk hingga larut.", "duration_minutes": 1 },
+      { "order": 3, "instruction": "Peras lemon, masukkan ke dalam teh.", "duration_minutes": 1 },
+      { "order": 4, "instruction": "Tambahkan air dingin dan es batu. Sajikan segera.", "duration_minutes": 1 }
+    ],
+    "nutrition": { "calories": 65, "protein": 0, "carbs": 17, "fat": 0 }
+  },
+  {
+    "title": "Smoothie Buah Tropis",
+    "description": "Campuran mangga, nanas, dan pisang yang diblender menjadi minuman kaya vitamin. Cocok diminum saat panas terik!",
+    "category": "minuman",
+    "difficulty": "easy",
+    "prep_time": 10,
+    "cook_time": 0,
+    "servings": 2,
+    "is_published": true,
+    "source": "manual",
+    "tags": ["smoothie", "buah", "segar", "es", "panas", "sehat", "vitamin", "summer", "jus"],
+    "images": [],
+    "ingredients": [
+      { "name": "Mangga matang", "amount": 1, "unit": "buah" },
+      { "name": "Nanas", "amount": 100, "unit": "gram" },
+      { "name": "Pisang", "amount": 1, "unit": "buah" },
+      { "name": "Yogurt plain", "amount": 100, "unit": "ml" },
+      { "name": "Madu", "amount": 1, "unit": "sdm" },
+      { "name": "Es batu", "amount": 150, "unit": "gram" }
+    ],
+    "steps": [
+      { "order": 1, "instruction": "Kupas dan potong semua buah menjadi potongan kecil.", "duration_minutes": 5 },
+      { "order": 2, "instruction": "Masukkan semua bahan ke blender.", "duration_minutes": 1 },
+      { "order": 3, "instruction": "Blender hingga halus dan creamy, sekitar 60 detik.", "duration_minutes": 2 },
+      { "order": 4, "instruction": "Tuang ke gelas dan sajikan segera.", "duration_minutes": 1 }
+    ],
+    "nutrition": { "calories": 180, "protein": 4, "carbs": 40, "fat": 2 }
+  },
+  {
+    "title": "Sup Ayam Jahe Hangat",
+    "description": "Sup ayam berkuah bening dengan potongan jahe dan sayuran segar. Cocok untuk hari dingin atau hujan, juga baik saat sakit.",
+    "category": "masakan_indonesia",
+    "difficulty": "medium",
+    "prep_time": 20,
+    "cook_time": 40,
+    "servings": 4,
+    "is_published": true,
+    "source": "manual",
+    "tags": ["sup", "ayam", "hangat", "berkuah", "kuah", "jahe", "dingin", "hujan", "sakit", "sehat"],
+    "images": [],
+    "ingredients": [
+      { "name": "Ayam potong", "amount": 500, "unit": "gram" },
+      { "name": "Jahe", "amount": 3, "unit": "cm" },
+      { "name": "Wortel", "amount": 2, "unit": "buah" },
+      { "name": "Kentang", "amount": 2, "unit": "buah" },
+      { "name": "Daun bawang", "amount": 2, "unit": "batang" },
+      { "name": "Bawang putih", "amount": 4, "unit": "siung" },
+      { "name": "Bawang merah", "amount": 3, "unit": "siung" },
+      { "name": "Air", "amount": 1500, "unit": "ml" },
+      { "name": "Garam", "amount": 1, "unit": "sdt" },
+      { "name": "Merica bubuk", "amount": 0.5, "unit": "sdt" },
+      { "name": "Minyak goreng", "amount": 2, "unit": "sdm" }
+    ],
+    "steps": [
+      { "order": 1, "instruction": "Tumis bawang merah, bawang putih, dan jahe yang sudah dimemarkan hingga harum.", "duration_minutes": 3 },
+      { "order": 2, "instruction": "Masukkan ayam, tumis hingga berubah warna.", "duration_minutes": 5 },
+      { "order": 3, "instruction": "Tambahkan air, didihkan lalu kecilkan api.", "duration_minutes": 5 },
+      { "order": 4, "instruction": "Masukkan wortel dan kentang. Rebus 20 menit.", "duration_minutes": 20 },
+      { "order": 5, "instruction": "Bumbui dengan garam dan merica. Taburi daun bawang, sajikan panas.", "duration_minutes": 2 }
+    ],
+    "nutrition": { "calories": 285, "protein": 28, "carbs": 22, "fat": 8 }
+  },
+  {
+    "title": "Salad Sayur Segar dengan Dressing Lemon",
+    "description": "Salad sayuran segar dengan dressing lemon olive oil yang ringan. Cocok untuk diet sehat dan rendah kalori.",
+    "category": "salad",
+    "difficulty": "easy",
+    "prep_time": 15,
+    "cook_time": 0,
+    "servings": 2,
+    "is_published": true,
+    "source": "manual",
+    "tags": ["salad", "sehat", "diet", "rendah_kalori", "vegetarian", "segar", "sayur", "mudah", "praktis"],
+    "images": [],
+    "ingredients": [
+      { "name": "Selada romaine", "amount": 200, "unit": "gram" },
+      { "name": "Tomat ceri", "amount": 100, "unit": "gram" },
+      { "name": "Timun", "amount": 1, "unit": "buah" },
+      { "name": "Wortel", "amount": 1, "unit": "buah" },
+      { "name": "Jagung manis", "amount": 50, "unit": "gram" },
+      { "name": "Olive oil", "amount": 2, "unit": "sdm" },
+      { "name": "Perasan lemon", "amount": 1, "unit": "sdm" },
+      { "name": "Garam", "amount": 0.5, "unit": "sdt" },
+      { "name": "Lada hitam", "amount": 0.25, "unit": "sdt" },
+      { "name": "Madu", "amount": 1, "unit": "sdt" }
+    ],
+    "steps": [
+      { "order": 1, "instruction": "Cuci semua sayuran hingga bersih.", "duration_minutes": 3 },
+      { "order": 2, "instruction": "Potong-potong selada, iris timun dan wortel tipis.", "duration_minutes": 5 },
+      { "order": 3, "instruction": "Campur olive oil, lemon, garam, lada, dan madu. Kocok rata sebagai dressing.", "duration_minutes": 2 },
+      { "order": 4, "instruction": "Tata semua sayur di piring, siram dressing di atasnya. Sajikan segera.", "duration_minutes": 2 }
+    ],
+    "nutrition": { "calories": 145, "protein": 3, "carbs": 18, "fat": 8 }
+  },
+  {
+    "title": "Nasi Goreng Telur Sederhana",
+    "description": "Nasi goreng klasik dengan telur ceplok di atas, bumbu bawang dan kecap yang harum. Sarapan atau makan malam praktis!",
+    "category": "masakan_indonesia",
+    "difficulty": "easy",
+    "prep_time": 5,
+    "cook_time": 10,
+    "servings": 1,
+    "is_published": true,
+    "source": "manual",
+    "tags": ["nasi", "telur", "mudah", "praktis", "cepat", "sarapan", "makan_malam", "masakan_indonesia", "10_menit"],
+    "images": [],
+    "ingredients": [
+      { "name": "Nasi putih", "amount": 200, "unit": "gram" },
+      { "name": "Telur", "amount": 2, "unit": "butir" },
+      { "name": "Bawang putih", "amount": 2, "unit": "siung" },
+      { "name": "Bawang merah", "amount": 2, "unit": "siung" },
+      { "name": "Kecap manis", "amount": 1, "unit": "sdm" },
+      { "name": "Garam", "amount": 0.5, "unit": "sdt" },
+      { "name": "Merica", "amount": 0.25, "unit": "sdt" },
+      { "name": "Minyak goreng", "amount": 2, "unit": "sdm" }
+    ],
+    "steps": [
+      { "order": 1, "instruction": "Tumis bawang merah dan bawang putih cincang hingga harum.", "duration_minutes": 2 },
+      { "order": 2, "instruction": "Masukkan nasi, aduk rata dengan bumbu.", "duration_minutes": 3 },
+      { "order": 3, "instruction": "Tambahkan kecap manis, garam, merica. Aduk rata.", "duration_minutes": 2 },
+      { "order": 4, "instruction": "Di wajan terpisah, goreng telur ceplok. Letakkan di atas nasi.", "duration_minutes": 3 }
+    ],
+    "nutrition": { "calories": 420, "protein": 14, "carbs": 65, "fat": 12 }
+  },
+  {
+    "title": "Bubur Ayam Kampung",
+    "description": "Bubur nasi lembut dengan topping ayam suwir, cakue, dan kuah kaldu gurih. Ideal untuk sarapan atau saat sakit.",
+    "category": "masakan_indonesia",
+    "difficulty": "medium",
+    "prep_time": 15,
+    "cook_time": 45,
+    "servings": 4,
+    "is_published": true,
+    "source": "manual",
+    "tags": ["bubur", "ayam", "sarapan", "pagi", "sakit", "berkuah", "hangat", "masakan_indonesia"],
+    "images": [],
+    "ingredients": [
+      { "name": "Beras", "amount": 200, "unit": "gram" },
+      { "name": "Ayam kampung", "amount": 250, "unit": "gram" },
+      { "name": "Kaldu ayam", "amount": 1000, "unit": "ml" },
+      { "name": "Jahe", "amount": 2, "unit": "cm" },
+      { "name": "Bawang putih", "amount": 3, "unit": "siung" },
+      { "name": "Daun bawang", "amount": 2, "unit": "batang" },
+      { "name": "Kecap asin", "amount": 1, "unit": "sdm" },
+      { "name": "Garam", "amount": 1, "unit": "sdt" }
+    ],
+    "steps": [
+      { "order": 1, "instruction": "Rebus ayam dengan kaldu, jahe, dan bawang putih hingga matang.", "duration_minutes": 25 },
+      { "order": 2, "instruction": "Angkat ayam, suwir-suwir. Saring kaldu.", "duration_minutes": 5 },
+      { "order": 3, "instruction": "Masak beras dalam kaldu dengan api kecil sambil terus diaduk hingga menjadi bubur.", "duration_minutes": 35 },
+      { "order": 4, "instruction": "Sajikan dengan topping ayam suwir, daun bawang, dan kecap asin.", "duration_minutes": 2 }
+    ],
+    "nutrition": { "calories": 310, "protein": 22, "carbs": 45, "fat": 5 }
+  },
+  {
+    "title": "Tempe Bacem",
+    "description": "Tempe dimasak dengan bumbu bacem manis gurih khas Jawa, kemudian digoreng hingga kecokelatan. Lauk sederhana yang lezat.",
+    "category": "masakan_indonesia",
+    "difficulty": "easy",
+    "prep_time": 10,
+    "cook_time": 30,
+    "servings": 4,
+    "is_published": true,
+    "source": "manual",
+    "tags": ["tempe", "tahu", "vegetarian", "goreng", "masakan_indonesia", "lauk", "mudah"],
+    "images": [],
+    "ingredients": [
+      { "name": "Tempe", "amount": 400, "unit": "gram" },
+      { "name": "Bawang merah", "amount": 5, "unit": "siung" },
+      { "name": "Bawang putih", "amount": 3, "unit": "siung" },
+      { "name": "Ketumbar", "amount": 1, "unit": "sdt" },
+      { "name": "Gula merah", "amount": 3, "unit": "sdm" },
+      { "name": "Kecap manis", "amount": 2, "unit": "sdm" },
+      { "name": "Garam", "amount": 0.5, "unit": "sdt" },
+      { "name": "Air kelapa", "amount": 200, "unit": "ml" },
+      { "name": "Minyak goreng", "amount": 200, "unit": "ml" }
+    ],
+    "steps": [
+      { "order": 1, "instruction": "Haluskan bawang merah, bawang putih, dan ketumbar.", "duration_minutes": 5 },
+      { "order": 2, "instruction": "Masak tempe dengan bumbu halus, gula merah, kecap, garam, dan air kelapa. Masak hingga air habis.", "duration_minutes": 25 },
+      { "order": 3, "instruction": "Goreng tempe yang sudah dibacem hingga cokelat keemasan.", "duration_minutes": 8 }
+    ],
+    "nutrition": { "calories": 250, "protein": 18, "carbs": 20, "fat": 11 }
+  },
+  {
+    "title": "Jus Alpukat Kental",
+    "description": "Jus alpukat creamy dengan susu dan sedikit madu. Minuman bergizi tinggi yang mengenyangkan.",
+    "category": "minuman",
+    "difficulty": "easy",
+    "prep_time": 10,
+    "cook_time": 0,
+    "servings": 2,
+    "is_published": true,
+    "source": "manual",
+    "tags": ["jus", "alpukat", "buah", "minuman", "sehat", "segar", "energi", "protein"],
+    "images": [],
+    "ingredients": [
+      { "name": "Alpukat matang", "amount": 2, "unit": "buah" },
+      { "name": "Susu cair", "amount": 200, "unit": "ml" },
+      { "name": "Madu", "amount": 2, "unit": "sdm" },
+      { "name": "Es batu", "amount": 100, "unit": "gram" },
+      { "name": "Cokelat bubuk", "amount": 1, "unit": "sdt" }
+    ],
+    "steps": [
+      { "order": 1, "instruction": "Belah alpukat, ambil dagingnya dengan sendok.", "duration_minutes": 3 },
+      { "order": 2, "instruction": "Masukkan alpukat, susu, madu, dan es ke blender.", "duration_minutes": 1 },
+      { "order": 3, "instruction": "Blender hingga halus dan creamy.", "duration_minutes": 2 },
+      { "order": 4, "instruction": "Tuang ke gelas, taburi cokelat bubuk di atas. Sajikan.", "duration_minutes": 1 }
+    ],
+    "nutrition": { "calories": 320, "protein": 5, "carbs": 28, "fat": 22 }
+  },
+  {
+    "title": "Ayam Bakar Kecap",
+    "description": "Ayam yang dimarinasi bumbu kecap dan rempah-rempah lalu dibakar hingga harum. Sajikan dengan sambal dan lalapan.",
+    "category": "masakan_indonesia",
+    "difficulty": "medium",
+    "prep_time": 30,
+    "cook_time": 30,
+    "servings": 4,
+    "is_published": true,
+    "source": "manual",
+    "tags": ["ayam", "bakar", "panggang", "grill", "masakan_indonesia", "protein", "daging", "makan_malam"],
+    "images": [],
+    "ingredients": [
+      { "name": "Ayam potong", "amount": 1, "unit": "ekor" },
+      { "name": "Kecap manis", "amount": 5, "unit": "sdm" },
+      { "name": "Bawang putih", "amount": 5, "unit": "siung" },
+      { "name": "Ketumbar", "amount": 1, "unit": "sdt" },
+      { "name": "Jahe", "amount": 2, "unit": "cm" },
+      { "name": "Kunyit", "amount": 1, "unit": "cm" },
+      { "name": "Garam", "amount": 1, "unit": "sdt" },
+      { "name": "Minyak goreng", "amount": 2, "unit": "sdm" }
+    ],
+    "steps": [
+      { "order": 1, "instruction": "Haluskan semua bumbu. Marinasi ayam dengan bumbu dan kecap manis minimal 30 menit.", "duration_minutes": 30 },
+      { "order": 2, "instruction": "Kukus atau rebus ayam setengah matang, sekitar 15 menit.", "duration_minutes": 15 },
+      { "order": 3, "instruction": "Bakar ayam di atas bara api atau grill pan, olesi sisa bumbu marinade. Bolak-balik hingga matang.", "duration_minutes": 15 },
+      { "order": 4, "instruction": "Sajikan dengan sambal terasi dan lalapan segar.", "duration_minutes": 2 }
+    ],
+    "nutrition": { "calories": 350, "protein": 35, "carbs": 15, "fat": 16 }
+  },
+  {
+    "title": "Wedang Jahe Sereh",
+    "description": "Minuman hangat jahe dan sereh yang menyehatkan. Sempurna untuk menghangatkan tubuh saat hujan atau malam hari.",
+    "category": "minuman",
+    "difficulty": "easy",
+    "prep_time": 5,
+    "cook_time": 15,
+    "servings": 2,
+    "is_published": true,
+    "source": "manual",
+    "tags": ["wedang", "jahe", "hangat", "minuman", "dingin", "hujan", "sehat", "sakit", "teh"],
+    "images": [],
+    "ingredients": [
+      { "name": "Jahe", "amount": 5, "unit": "cm" },
+      { "name": "Sereh", "amount": 2, "unit": "batang" },
+      { "name": "Gula merah", "amount": 3, "unit": "sdm" },
+      { "name": "Air", "amount": 500, "unit": "ml" },
+      { "name": "Daun pandan", "amount": 2, "unit": "lembar" }
+    ],
+    "steps": [
+      { "order": 1, "instruction": "Geprek jahe dan sereh.", "duration_minutes": 2 },
+      { "order": 2, "instruction": "Rebus air bersama jahe, sereh, pandan, dan gula merah.", "duration_minutes": 10 },
+      { "order": 3, "instruction": "Kecilkan api, biarkan mendidih perlahan 5 menit.", "duration_minutes": 5 },
+      { "order": 4, "instruction": "Saring ke dalam gelas, sajikan hangat.", "duration_minutes": 1 }
+    ],
+    "nutrition": { "calories": 90, "protein": 0, "carbs": 22, "fat": 0 }
+  }
+]
