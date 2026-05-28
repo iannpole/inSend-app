@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use App\Mail\OtpMail;
+use App\Mail\PasswordResetOtpMail;
 use Firebase\JWT\JWT;
 use Firebase\JWT\JWK;
 use Exception;
@@ -38,16 +39,28 @@ class AuthController extends Controller
             'otp_expires_at' => now()->addMinutes(10),
         ]);
 
+        $emailSent = false;
+        $emailError = null;
+
         try {
             Mail::to($user->email)->send(new OtpMail($otp, $user->name));
+            $emailSent = true;
         } catch (Exception $e) {
-            // Bisa log error di sini, tapi lanjutkan saja
+            $emailError = $e->getMessage();
+            \Illuminate\Support\Facades\Log::error('Gagal kirim OTP email', [
+                'email' => $user->email,
+                'error' => $emailError,
+            ]);
         }
 
         return response()->json([
-            'message' => 'Registrasi berhasil. Silakan cek email Anda untuk kode verifikasi (OTP).',
+            'message' => $emailSent
+                ? 'Registrasi berhasil. Silakan cek email Anda untuk kode verifikasi (OTP).'
+                : 'Registrasi berhasil, tapi gagal mengirim email OTP. Silakan klik "Kirim Ulang OTP".',
             'require_verification' => true,
-            'email'   => $user->email,
+            'email'      => $user->email,
+            'email_sent' => $emailSent,
+            'email_error'=> $emailError,
         ], 201);
     }
 
@@ -272,6 +285,97 @@ class AuthController extends Controller
     {
         return response()->json([
             'user' => new UserResource($request->user()),
+        ]);
+    }
+
+    /**
+     * POST /api/auth/forgot-password
+     *
+     * Sends a password-reset OTP to the user's registered email.
+     */
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            // Return success even if user not found to prevent email enumeration
+            return response()->json([
+                'message' => 'Jika email terdaftar, kode OTP telah dikirim.',
+            ]);
+        }
+
+        $otp = sprintf("%06d", mt_rand(1, 999999));
+
+        $user->update([
+            'otp_code'       => $otp,
+            'otp_expires_at' => now()->addMinutes(15),
+        ]);
+
+        $emailSent = false;
+        $emailError = null;
+
+        try {
+            Mail::to($user->email)->send(new PasswordResetOtpMail($otp, $user->name));
+            $emailSent = true;
+        } catch (Exception $e) {
+            $emailError = $e->getMessage();
+            \Illuminate\Support\Facades\Log::error('Gagal kirim OTP reset password', [
+                'email' => $user->email,
+                'error' => $emailError,
+            ]);
+        }
+
+        return response()->json([
+            'message'    => $emailSent
+                ? 'Kode OTP telah dikirim ke email Anda untuk reset password.'
+                : 'Gagal mengirim email OTP. Silakan coba lagi.',
+            'email_sent' => $emailSent,
+        ]);
+    }
+
+    /**
+     * POST /api/auth/reset-password
+     *
+     * Verifies the OTP and sets a new password.
+     */
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email'    => 'required|email',
+            'otp_code' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'User tidak ditemukan'], 404);
+        }
+
+        if ($user->otp_code !== $request->otp_code) {
+            return response()->json(['message' => 'Kode OTP tidak valid'], 400);
+        }
+
+        if (now()->greaterThan($user->otp_expires_at)) {
+            return response()->json(['message' => 'Kode OTP sudah kadaluarsa. Silakan minta ulang.'], 400);
+        }
+
+        // Update password and clear OTP
+        $user->update([
+            'password'       => $request->password,
+            'otp_code'       => null,
+            'otp_expires_at' => null,
+        ]);
+
+        // Revoke all existing tokens for security
+        $user->tokens()->delete();
+
+        return response()->json([
+            'message' => 'Password berhasil direset. Silakan login dengan password baru.',
         ]);
     }
 }

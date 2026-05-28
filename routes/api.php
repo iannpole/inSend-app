@@ -34,11 +34,13 @@ use Illuminate\Support\Facades\Route;
 
 // ── Auth ────────────────────────────────────────────────────
 Route::prefix('auth')->group(function () {
-    Route::post('/register',     [AuthController::class, 'register']);
-    Route::post('/login',        [AuthController::class, 'login']);
-    Route::post('/social-login', [AuthController::class, 'socialLogin']);
-    Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
-    Route::post('/resend-otp',   [AuthController::class, 'resendOtp']);
+    Route::post('/register',        [AuthController::class, 'register']);
+    Route::post('/login',           [AuthController::class, 'login']);
+    Route::post('/social-login',    [AuthController::class, 'socialLogin']);
+    Route::post('/verify-email',    [AuthController::class, 'verifyEmail']);
+    Route::post('/resend-otp',      [AuthController::class, 'resendOtp']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password',  [AuthController::class, 'resetPassword']);
 });
 
 // ── Products (public read) ──────────────────────────────────

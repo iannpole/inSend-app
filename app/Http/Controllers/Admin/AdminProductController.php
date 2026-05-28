@@ -7,26 +7,12 @@ use App\Models\Product;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use MongoDB\BSON\ObjectId;
 
 class AdminProductController extends Controller
 {
     private function findProduct(string $id): Product
     {
-        // First try finding by exact raw string (for JSON imported data)
-        $product = Product::whereRaw(['_id' => $id])->first();
-
-        if (!$product) {
-            $product = Product::find($id);
-        }
-
-        if (!$product && strlen($id) === 24 && ctype_xdigit($id)) {
-            try {
-                $product = Product::where('_id', new ObjectId($id))->first();
-            } catch (\Exception $e) {
-                // Ignore exception and continue
-            }
-        }
+        $product = Product::find($id);
 
         if (!$product) {
             abort(404);

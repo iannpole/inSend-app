@@ -15,11 +15,7 @@ class Product extends Model
 
     public function resolveRouteBinding($value, $field = null)
     {
-        try {
-            return $this->where('_id', new ObjectId($value))->firstOrFail();
-        } catch (\Exception $e) {
-            abort(404);
-        }
+        return $this->findOrFail($value);
     }
     protected $fillable = [
         'slug',
