@@ -154,11 +154,17 @@
             <input type="file" name="images[]" id="images" multiple accept="image/*"
                 class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-[#00473B] focus:ring focus:ring-[#00473B] focus:ring-opacity-20 outline-none transition-all text-sm bg-gray-50 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-white file:text-gray-700 file:border file:border-gray-200 hover:file:bg-gray-50">
             @if(isset($product) && is_array($product->images) && count($product->images) > 0)
-                <div class="flex gap-2 mt-4 flex-wrap">
+                <div class="flex gap-3 mt-4 flex-wrap" id="existing-images-container">
                     @foreach($product->images as $img)
-                        <img src="{{ Str::startsWith($img, 'http') ? $img : asset('storage/' . $img) }}" class="h-20 w-20 object-cover rounded-lg border border-gray-200">
+                        <div class="relative group" id="img-container-{{ md5($img) }}">
+                            <img src="{{ Str::startsWith($img, 'http') ? $img : asset('storage/' . $img) }}" class="h-24 w-24 object-cover rounded-xl border border-gray-200">
+                            <button type="button" onclick="removeImage('{{ $img }}', 'img-container-{{ md5($img) }}')" class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
+                                ✕
+                            </button>
+                        </div>
                     @endforeach
                 </div>
+                <div id="deleted-images-inputs"></div>
             @endif
         </div>
 
@@ -187,6 +193,18 @@
         const cb = document.getElementById('discount_active');
         panel.style.display = cb.checked ? '' : 'none';
         if (cb.checked) updatePreview();
+    }
+
+    function removeImage(imagePath, containerId) {
+        // Remove the image element from the view
+        document.getElementById(containerId).remove();
+        
+        // Add a hidden input to submit the deleted image path
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'deleted_images[]';
+        input.value = imagePath;
+        document.getElementById('deleted-images-inputs').appendChild(input);
     }
 
     function calcFromPercentage() {

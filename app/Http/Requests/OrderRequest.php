@@ -30,6 +30,7 @@ class OrderRequest extends FormRequest
             'notes'                           => ['nullable', 'string', 'max:500'],
             'payment_method'                  => ['nullable', 'string', 'in:cod,bank_transfer,qris,gopay,ovo'],
             'delivery_fee'                    => ['nullable', 'numeric', 'min:0'],
+            'discount_amount'                 => ['nullable', 'numeric', 'min:0'],
             'promo_code'                      => ['nullable', 'string', 'max:50'],
         ];
     }

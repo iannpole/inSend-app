@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\PromoController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\InventoryController;
+use App\Http\Controllers\Api\BlogController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -57,6 +58,11 @@ Route::get('/recipes/{id}',     [RecipeController::class, 'show']);
 
 // ── Reviews (public read) ───────────────────────────────────
 Route::get('/products/{product_id}/reviews', [ReviewController::class, 'productReviews']);
+
+// ── Blog (public read) ──────────────────────────────────────
+Route::get('/blog/sidebar', [BlogController::class, 'sidebar']);
+Route::get('/blog', [BlogController::class, 'index']);
+Route::get('/blog/{id}', [BlogController::class, 'show']);
 
 // ── Promos (public list) ────────────────────────────────────
 Route::get('/promos', [PromoController::class, 'index']);

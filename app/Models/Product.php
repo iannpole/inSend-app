@@ -67,10 +67,21 @@ class Product extends Model
             return false;
         }
 
+        $startStr = $info['start_date'] ?? null;
+        $endStr   = $info['end_date'] ?? null;
+
+        // Ignore empty strings or 1970 dates (which can occur from null DB casts)
+        if (empty($startStr) || str_starts_with($startStr, '1970-01-01')) {
+            $startStr = null;
+        }
+        if (empty($endStr) || str_starts_with($endStr, '1970-01-01')) {
+            $endStr = null;
+        }
+
         // Cek apakah dalam periode diskon
         $now = Carbon::now();
-        $start = !empty($info['start_date']) ? Carbon::parse($info['start_date']) : null;
-        $end   = !empty($info['end_date'])   ? Carbon::parse($info['end_date'])   : null;
+        $start = $startStr ? Carbon::parse($startStr) : null;
+        $end   = $endStr ? Carbon::parse($endStr) : null;
 
         if ($start && $end) {
             return $now->between($start, $end);

@@ -85,8 +85,8 @@ class AdminProductController extends Controller
             'is_active'     => $discountActive,
             'percentage'    => (int) $percentage,
             'fixed_amount'  => (int) $fixedAmount,
-            'start_date'    => $request->discount_start ?? null,
-            'end_date'      => $request->discount_end ?? null,
+            'start_date'    => $request->filled('discount_start') ? $request->discount_start : null,
+            'end_date'      => $request->filled('discount_end') ? $request->discount_end : null,
             'campaign_name' => $request->campaign_name ?? '',
         ];
 
@@ -157,20 +157,38 @@ class AdminProductController extends Controller
             'is_active'     => $discountActive,
             'percentage'    => (int) $percentage,
             'fixed_amount'  => (int) $fixedAmount,
-            'start_date'    => $request->discount_start ?? null,
-            'end_date'      => $request->discount_end ?? null,
+            'start_date'    => $request->filled('discount_start') ? $request->discount_start : null,
+            'end_date'      => $request->filled('discount_end') ? $request->discount_end : null,
             'campaign_name' => $request->campaign_name ?? '',
         ];
 
+        $existingImages = is_array($product->images) ? $product->images : [];
+        
+        if ($request->has('deleted_images')) {
+            $deletedImages = $request->deleted_images;
+            foreach ($deletedImages as $delImg) {
+                // Delete file from storage if it's local
+                if (!Str::startsWith($delImg, 'http')) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($delImg);
+                }
+                // Remove from existing images array
+                if (($key = array_search($delImg, $existingImages)) !== false) {
+                    unset($existingImages[$key]);
+                }
+            }
+            // Re-index array
+            $existingImages = array_values($existingImages);
+            $validated['images'] = $existingImages;
+        }
+
         if ($request->hasFile('images')) {
-            $existingImages = $product->images ?? [];
             foreach ($request->file('images') as $image) {
                 $existingImages[] = $image->store('products', 'public');
             }
             $validated['images'] = $existingImages;
         }
 
-        unset($validated['discount_active'], $validated['discount_percentage'], $validated['discount_fixed'], $validated['discount_start'], $validated['discount_end'], $validated['campaign_name']);
+        unset($validated['discount_active'], $validated['discount_percentage'], $validated['discount_fixed'], $validated['discount_start'], $validated['discount_end'], $validated['campaign_name'], $validated['deleted_images']);
 
         $product->update($validated);
 

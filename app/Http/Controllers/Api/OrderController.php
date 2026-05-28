@@ -13,10 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
-    /**
-     * GET /api/orders
-     * User hanya lihat order sendiri. Admin lihat semua.
-     */
+    
     public function index(Request $request): JsonResponse
     {
         $query = Order::query();
@@ -109,8 +106,8 @@ class OrderController extends Controller
 
         // Kalkulasi total
         $deliveryFee    = (float) ($validated['delivery_fee'] ?? 0);
-        $discountAmount = 0;
-        $totalPrice     = $subtotal + $deliveryFee - $discountAmount;
+        $discountAmount = (float) ($validated['discount_amount'] ?? 0);
+        $totalPrice     = max(0, $subtotal + $deliveryFee - $discountAmount);
 
         $order = Order::create([
             'user_id'          => (string) $request->user()->_id,
@@ -126,6 +123,7 @@ class OrderController extends Controller
             'address_id'       => $validated['address_id'] ?? null,
             'notes'            => $validated['notes'] ?? null,
             'payment_method'   => $validated['payment_method'] ?? 'cod',
+            'promo_code'       => $validated['promo_code'] ?? null,
         ]);
 
         return response()->json([

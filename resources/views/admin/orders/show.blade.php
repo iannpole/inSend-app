@@ -22,14 +22,20 @@
             <div class="p-6">
                 <ul class="space-y-4">
                     @foreach($order->items as $item)
+                        @php
+                            $itemName = $item['product_name_snapshot'] ?? $item['name'] ?? 'Unknown Product';
+                            $itemQty = $item['quantity'] ?? $item['qty'] ?? 0;
+                            $itemPrice = $item['price_per_unit'] ?? $item['price'] ?? 0;
+                            $itemTotal = $item['total_price'] ?? $item['subtotal'] ?? ($itemQty * $itemPrice);
+                        @endphp
                         <li class="flex justify-between items-start pb-4 border-b border-gray-50 last:border-0 last:pb-0">
                             <div>
-                               <p class="font-medium text-gray-900">{{ $item['product_name_snapshot'] }}</p>
+                               <p class="font-medium text-gray-900">{{ $itemName }}</p>
                                 <p class="text-sm text-gray-500 mt-0.5">
-                                    {{ $item['quantity'] }} x Rp {{ number_format($item['price_per_unit'], 0, ',', '.') }}
+                                    {{ $itemQty }} x Rp {{ number_format($itemPrice, 0, ',', '.') }}
                                 </p>
                             </div>
-                            <span class="font-medium text-gray-900">Rp {{ number_format($item['total_price'], 0, ',', '.') }}</span>
+                            <span class="font-medium text-gray-900">Rp {{ number_format($itemTotal, 0, ',', '.') }}</span>
                         </li>
                     @endforeach
                 </ul>

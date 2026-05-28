@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AdminRecipeController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\SearchController;
+use App\Http\Controllers\Admin\BlogPostController;
 
 Route::get('/', function () {
     return view('admin/login');
@@ -31,6 +32,9 @@ Route::middleware(['web', 'admin'])->prefix('admin')->name('admin.')->group(func
     
     // Recipes
     Route::resource('recipes', AdminRecipeController::class)->except(['show']);
+    
+    // Blog
+    Route::resource('blog', BlogPostController::class)->except(['show']);
     
     // Orders
     Route::resource('orders', AdminOrderController::class)->only(['index', 'show']);
