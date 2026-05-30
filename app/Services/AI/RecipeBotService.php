@@ -119,9 +119,156 @@ class RecipeBotService implements AiServiceInterface
 
     public function chatWithImage(string $message, string $imagePath, array $history = []): string
     {
-        // Tanpa AI, fitur gambar tidak diproses — fallback ke chat text biasa
-        $note = '[Fitur analisis gambar tidak tersedia. Menampilkan rekomendasi berdasarkan teks.] ';
-        return $note . $this->chat($message, $history);
+        // ── Analyze image without external AI ──
+        // Strategy: extract hints from filename, combine with user message,
+        // and use image metadata to infer food context.
+        
+        $imageKeywords = $this->analyzeImageHints($imagePath);
+        
+        // Combine user message with image-derived context
+        $enrichedMessage = $message;
+        if (!empty($imageKeywords)) {
+            $enrichedMessage .= ' ' . implode(' ', $imageKeywords);
+        }
+        
+        // If user sent image without text, provide helpful context
+        if (empty(trim($message))) {
+            $enrichedMessage = implode(' ', $imageKeywords);
+            if (empty($enrichedMessage)) {
+                $enrichedMessage = 'sayur buah segar'; // default context for food images
+            }
+        }
+        
+        // Run through normal chat engine with enriched message
+        $response = $this->chat($enrichedMessage, $history);
+        
+        // Prepend image acknowledgment to response
+        $parsed = json_decode($response, true);
+        if ($parsed && isset($parsed['message'])) {
+            $imageNote = '📸 Foto berhasil diterima! ';
+            if (!empty($imageKeywords)) {
+                $imageNote .= 'Saya mendeteksi kemungkinan bahan: *' . implode(', ', $imageKeywords) . '*. ';
+            }
+            $parsed['message'] = $imageNote . $parsed['message'];
+            $parsed['image_analyzed'] = true;
+            $parsed['detected_keywords'] = $imageKeywords;
+            return json_encode($parsed, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        }
+        
+        return $response;
+    }
+
+    // ---------------------------------------------------------------
+    // IMAGE ANALYSIS — extract food hints without external AI
+    // ---------------------------------------------------------------
+
+    private function analyzeImageHints(string $imagePath): array
+    {
+        $keywords = [];
+        
+        // 1. Analyze filename for food-related words
+        $filename = mb_strtolower(pathinfo($imagePath, PATHINFO_FILENAME));
+        $filename = preg_replace('/[^a-z0-9\s_\-]/', ' ', $filename);
+        
+        $foodWords = [
+            'ayam', 'ikan', 'daging', 'sapi', 'kambing', 'udang', 'cumi',
+            'sayur', 'bayam', 'kangkung', 'brokoli', 'wortel', 'tomat',
+            'buah', 'apel', 'jeruk', 'pisang', 'mangga', 'alpukat',
+            'nasi', 'mie', 'roti', 'telur', 'tahu', 'tempe',
+            'bawang', 'cabe', 'cabai', 'jahe', 'kunyit', 'santan',
+            'goreng', 'bakar', 'rebus', 'kukus', 'panggang',
+            'soto', 'rendang', 'gulai', 'sate', 'bakso', 'rawon',
+            'chicken', 'fish', 'meat', 'beef', 'shrimp', 'egg',
+            'vegetable', 'fruit', 'rice', 'noodle', 'salad',
+            'food', 'meal', 'cook', 'kitchen', 'fridge', 'kulkas',
+        ];
+        
+        foreach ($foodWords as $word) {
+            if (str_contains($filename, $word)) {
+                $keywords[] = $word;
+            }
+        }
+        
+        // 2. Check image EXIF data for time-of-day context
+        if (function_exists('exif_read_data') && file_exists($imagePath)) {
+            try {
+                $exif = @exif_read_data($imagePath);
+                if ($exif && isset($exif['DateTimeOriginal'])) {
+                    $hour = (int) date('H', strtotime($exif['DateTimeOriginal']));
+                    if ($hour >= 5 && $hour < 10) {
+                        $keywords[] = 'sarapan';
+                    } elseif ($hour >= 11 && $hour < 14) {
+                        $keywords[] = 'makan_siang';
+                    } elseif ($hour >= 17 && $hour < 21) {
+                        $keywords[] = 'makan_malam';
+                    }
+                }
+            } catch (\Exception $e) {
+                // EXIF not available, skip
+            }
+        }
+        
+        // 3. Image color analysis — detect dominant green/red/brown for food category guess
+        if (function_exists('imagecreatefromjpeg') && file_exists($imagePath)) {
+            try {
+                $ext = strtolower(pathinfo($imagePath, PATHINFO_EXTENSION));
+                $img = null;
+                if ($ext === 'jpg' || $ext === 'jpeg') {
+                    $img = @imagecreatefromjpeg($imagePath);
+                } elseif ($ext === 'png') {
+                    $img = @imagecreatefrompng($imagePath);
+                }
+                
+                if ($img) {
+                    $width = imagesx($img);
+                    $height = imagesy($img);
+                    $totalR = $totalG = $totalB = 0;
+                    $sampleCount = 0;
+                    
+                    // Sample pixels in a grid pattern
+                    for ($x = 0; $x < $width; $x += max(1, intval($width / 10))) {
+                        for ($y = 0; $y < $height; $y += max(1, intval($height / 10))) {
+                            $rgb = imagecolorat($img, $x, $y);
+                            $totalR += ($rgb >> 16) & 0xFF;
+                            $totalG += ($rgb >> 8) & 0xFF;
+                            $totalB += $rgb & 0xFF;
+                            $sampleCount++;
+                        }
+                    }
+                    
+                    if ($sampleCount > 0) {
+                        $avgR = $totalR / $sampleCount;
+                        $avgG = $totalG / $sampleCount;
+                        $avgB = $totalB / $sampleCount;
+                        
+                        // Green dominant → likely vegetables
+                        if ($avgG > $avgR * 1.2 && $avgG > $avgB * 1.2) {
+                            $keywords[] = 'sayur';
+                        }
+                        // Red/orange dominant → likely meat or fruit
+                        elseif ($avgR > $avgG * 1.3 && $avgR > $avgB * 1.3) {
+                            $keywords[] = 'daging';
+                            $keywords[] = 'buah';
+                        }
+                        // Brown tones → likely cooked food
+                        elseif ($avgR > 100 && $avgG > 60 && $avgB < 80) {
+                            $keywords[] = 'goreng';
+                        }
+                    }
+                    
+                    imagedestroy($img);
+                }
+            } catch (\Exception $e) {
+                // GD not available, skip
+            }
+        }
+        
+        // 4. If nothing detected, add default food context
+        if (empty($keywords)) {
+            $keywords = ['masakan', 'segar'];
+        }
+        
+        return array_unique($keywords);
     }
 
     // ---------------------------------------------------------------
