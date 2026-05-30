@@ -28,6 +28,7 @@ class PromoController extends Controller
                     'min_order'     => $promo->min_order ?? 0,
                     'start_date'    => $promo->start_date?->toIso8601String(),
                     'end_date'      => $promo->end_date?->toIso8601String(),
+                    'image_url'     => $promo->image_url ? url('storage/' . $promo->image_url) : null,
                 ];
             });
 
@@ -114,9 +115,15 @@ class PromoController extends Controller
             'start_date'     => ['nullable', 'date'],
             'end_date'       => ['nullable', 'date', 'after_or_equal:start_date'],
             'is_active'      => ['boolean'],
+            'image'          => ['nullable', 'image', 'max:2048'],
         ]);
 
         $validated['code'] = strtoupper($validated['code']);
+        
+        if ($request->hasFile('image')) {
+            $validated['image_url'] = $request->file('image')->store('promotions', 'public');
+        }
+
         $promo = Promotion::create($validated);
 
         return response()->json([
@@ -151,7 +158,12 @@ class PromoController extends Controller
             'start_date'     => ['nullable', 'date'],
             'end_date'       => ['nullable', 'date'],
             'is_active'      => ['boolean'],
+            'image'          => ['nullable', 'image', 'max:2048'],
         ]);
+
+        if ($request->hasFile('image')) {
+            $validated['image_url'] = $request->file('image')->store('promotions', 'public');
+        }
 
         $promo->update($validated);
 

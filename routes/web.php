@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\SearchController;
 use App\Http\Controllers\Admin\BlogPostController;
+use App\Http\Controllers\Admin\AdminPromoController;
 
 Route::get('/', function () {
     return view('admin/login');
@@ -39,6 +40,9 @@ Route::middleware(['web', 'admin'])->prefix('admin')->name('admin.')->group(func
     // Orders
     Route::resource('orders', AdminOrderController::class)->only(['index', 'show']);
     Route::put('orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.update_status');
+    
+    // Promotions
+    Route::resource('promotions', AdminPromoController::class)->except(['show']);
     
     // Users
     Route::resource('users', AdminUserController::class)->except(['create', 'store', 'show']);

@@ -27,6 +27,7 @@ class Promotion extends Model
         'start_date',
         'end_date',
         'is_active',
+        'image_url',
     ];
 
     protected $casts = [
