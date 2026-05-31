@@ -164,6 +164,56 @@ class RecipeBotService implements AiServiceInterface
 
     private function analyzeImageHints(string $imagePath, string $originalFilename = ''): array
     {
+        // 1. Try OpenRouter AI Vision if API Key is configured
+        $openRouterKey = env('OPENROUTER_API_KEY');
+        if ($openRouterKey && file_exists($imagePath)) {
+            try {
+                $base64 = base64_encode(file_get_contents($imagePath));
+                $mime = mime_content_type($imagePath) ?: 'image/jpeg';
+                
+                $response = \Illuminate\Support\Facades\Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $openRouterKey,
+                    'HTTP-Referer' => env('APP_URL', 'http://localhost'),
+                    'X-Title' => 'InSend App',
+                ])->timeout(30)->post('https://openrouter.ai/api/v1/chat/completions', [
+                    'model' => env('OPENROUTER_MODEL', 'deepseek/deepseek-chat'),
+                    'messages' => [
+                        [
+                            'role' => 'user',
+                            'content' => [
+                                [
+                                    'type' => 'text',
+                                    'text' => 'Analyze this food/grocery image. Return ONLY a comma-separated list of core ingredient keywords in Indonesian (e.g., tempe, ayam, sayur, bawang, beras, daging, ikan). If no food is found, return "tidak_ada". Do not include any other text or explanation.'
+                                ],
+                                [
+                                    'type' => 'image_url',
+                                    'image_url' => [
+                                        'url' => "data:{$mime};base64,{$base64}"
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]);
+
+                if ($response->successful()) {
+                    $content = $response->json('choices.0.message.content');
+                    if ($content) {
+                        $content = str_replace(['.', '"', '\''], '', mb_strtolower($content));
+                        $aiKeywords = array_map('trim', explode(',', $content));
+                        $aiKeywords = array_filter($aiKeywords, fn($k) => $k !== 'tidak_ada' && $k !== 'tidak_ada_makanan' && !empty($k));
+                        if (!empty($aiKeywords)) {
+                            return array_unique($aiKeywords);
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('OpenRouter AI Vision Error: ' . $e->getMessage());
+                // Silently fallback to heuristic if AI fails
+            }
+        }
+
+        // 2. Fallback to local heuristic (filename and colors)
         $keywords = [];
         
         // 1. Analyze filename for food-related words
