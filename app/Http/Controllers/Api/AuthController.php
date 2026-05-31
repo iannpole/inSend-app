@@ -26,7 +26,7 @@ class AuthController extends Controller
      */
     public function register(RegisterRequest $request): JsonResponse
     {
-        $otp = sprintf("%06d", mt_rand(1, 999999));
+        $otp = sprintf("%06d", random_int(100000, 999999));
 
         $user = User::create([
             'name'     => $request->name,
@@ -58,9 +58,7 @@ class AuthController extends Controller
                 ? 'Registrasi berhasil. Silakan cek email Anda untuk kode verifikasi (OTP).'
                 : 'Registrasi berhasil, tapi gagal mengirim email OTP. Silakan klik "Kirim Ulang OTP".',
             'require_verification' => true,
-            'email'      => $user->email,
-            'email_sent' => $emailSent,
-            'email_error'=> $emailError,
+            'email' => $user->email,
         ], 201);
     }
 
@@ -86,10 +84,8 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // Hapus token lama (opsional, untuk single session)
         $user->tokens()->delete();
-
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $user->createToken('auth_token', ['*'], now()->addDays(30))->plainTextToken;
 
         return response()->json([
             'message' => 'Login berhasil',
@@ -104,7 +100,7 @@ class AuthController extends Controller
     public function verifyEmail(Request $request): JsonResponse
     {
         $request->validate([
-            'email' => 'required|email',
+            'email'    => 'required|email',
             'otp_code' => 'required|string',
         ]);
 
@@ -114,24 +110,34 @@ class AuthController extends Controller
             return response()->json(['message' => 'User tidak ditemukan'], 404);
         }
 
+        // Brute-force protection: max 5 attempts
+        if (($user->otp_attempts ?? 0) >= 5) {
+            $user->update(['otp_code' => null, 'otp_expires_at' => null, 'otp_attempts' => 0]);
+            return response()->json([
+                'message' => 'Terlalu banyak percobaan. Silakan minta kode OTP baru.'
+            ], 429);
+        }
+
         if ($user->otp_code !== $request->otp_code) {
+            $user->increment('otp_attempts');
             return response()->json(['message' => 'Kode OTP tidak valid'], 400);
         }
 
         if (now()->greaterThan($user->otp_expires_at)) {
+            $user->update(['otp_attempts' => 0]);
             return response()->json(['message' => 'Kode OTP sudah kadaluarsa. Silakan minta ulang.'], 400);
         }
 
-        // Sukses verifikasi
+        // Sukses verifikasi — reset attempts
         $user->update([
             'email_verified_at' => now(),
-            'otp_code' => null,
-            'otp_expires_at' => null,
+            'otp_code'          => null,
+            'otp_expires_at'    => null,
+            'otp_attempts'      => 0,
         ]);
 
-        // Langsung berikan token login
         $user->tokens()->delete();
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $user->createToken('auth_token', ['*'], now()->addDays(30))->plainTextToken;
 
         return response()->json([
             'message' => 'Verifikasi email berhasil. Anda sudah login.',
@@ -159,7 +165,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'Email sudah diverifikasi'], 400);
         }
 
-        $otp = sprintf("%06d", mt_rand(1, 999999));
+        $otp = sprintf("%06d", random_int(100000, 999999));
         $user->update([
             'otp_code' => $otp,
             'otp_expires_at' => now()->addMinutes(10),
@@ -248,9 +254,8 @@ class AuthController extends Controller
                 ]);
             }
 
-            // Generate token
             $user->tokens()->delete();
-            $authToken = $user->createToken('auth_token')->plainTextToken;
+            $authToken = $user->createToken('auth_token', ['*'], now()->addDays(30))->plainTextToken;
 
             return response()->json([
                 'message' => 'Login berhasil',
@@ -259,10 +264,12 @@ class AuthController extends Controller
             ]);
 
         } catch (Exception $e) {
-            return response()->json([
-                'message' => 'Token verification failed',
-                'error' => $e->getMessage()
-            ], 401);
+            \Illuminate\Support\Facades\Log::warning('Social login failed', [
+                'provider' => $provider,
+                'ip'       => $request->ip(),
+                'error'    => $e->getMessage(),
+            ]);
+            return response()->json(['message' => 'Verifikasi token gagal. Silakan coba lagi.'], 401);
         }
     }
 
@@ -308,7 +315,7 @@ class AuthController extends Controller
             ]);
         }
 
-        $otp = sprintf("%06d", mt_rand(1, 999999));
+        $otp = sprintf("%06d", random_int(100000, 999999));
 
         $user->update([
             'otp_code'       => $otp,

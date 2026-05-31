@@ -33,8 +33,8 @@ use Illuminate\Support\Facades\Route;
 // PUBLIC ROUTES (tidak perlu token)
 // ═════════════════════════════════════════════════════════════
 
-// ── Auth ────────────────────────────────────────────────────
-Route::prefix('auth')->group(function () {
+// ── Auth (rate-limited: 5 req/minute per IP) ────────────────
+Route::prefix('auth')->middleware('throttle:5,1')->group(function () {
     Route::post('/register',        [AuthController::class, 'register']);
     Route::post('/login',           [AuthController::class, 'login']);
     Route::post('/social-login',    [AuthController::class, 'socialLogin']);
@@ -172,8 +172,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/recipes/{id}',      [RecipeController::class, 'update']);
     Route::delete('/recipes/{id}',   [RecipeController::class, 'destroy']);
 
-    // ── AI Chat ─────────────────────────────────────────────
-    Route::prefix('ai')->group(function () {
+    // ── AI Chat (rate-limited: 20 req/minute per user) ─────────
+    Route::prefix('ai')->middleware('throttle:20,1')->group(function () {
         Route::post('/chat',                       [AiController::class, 'chat']);
         Route::post('/generate-recipe',            [AiController::class, 'generateRecipe']);
         Route::get('/conversations',               [AiController::class, 'conversations']);

@@ -29,6 +29,8 @@ class PromoController extends Controller
                     'start_date'    => $promo->start_date?->toIso8601String(),
                     'end_date'      => $promo->end_date?->toIso8601String(),
                     'image_url'     => $promo->image_url ? url('storage/' . $promo->image_url) : null,
+                    'bg_color_start'=> $promo->bg_color_start,
+                    'bg_color_end'  => $promo->bg_color_end,
                 ];
             });
 

@@ -63,10 +63,13 @@ class AiController extends Controller
                 ? $this->aiService->chatWithImage($message, $imagePath, $history, $originalFilename)
                 : $this->aiService->chat($message, $history);
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('AI chat failed', [
+                'user_id' => $userId,
+                'error'   => $e->getMessage(),
+            ]);
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Gagal memproses permintaan.',
-                'error'   => $e->getMessage(),
+                'message' => 'Gagal memproses permintaan. Silakan coba lagi.',
             ], 500);
         }
 
@@ -106,10 +109,10 @@ class AiController extends Controller
         try {
             $rawResponse = $this->aiService->chat($message, []);
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('AI generate-recipe failed', ['error' => $e->getMessage()]);
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Gagal generate resep.',
-                'error'   => $e->getMessage(),
+                'message' => 'Gagal generate resep. Silakan coba lagi.',
             ], 500);
         }
 

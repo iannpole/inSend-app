@@ -28,6 +28,8 @@ class Promotion extends Model
         'end_date',
         'is_active',
         'image_url',
+        'bg_color_start', // Hex color code for the banner's start gradient
+        'bg_color_end',   // Hex color code for the banner's end gradient
     ];
 
     protected $casts = [

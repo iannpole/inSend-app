@@ -77,6 +77,26 @@
                 class="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-[#00473B] focus:ring focus:ring-[#00473B] focus:ring-opacity-20 outline-none transition-all text-sm">{{ old('description', $promotion->description ?? '') }}</textarea>
         </div>
 
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-1">
+                <label for="bg_color_start" class="block text-sm font-medium text-gray-700">Banner Background Start Color</label>
+                <div class="flex items-center gap-3">
+                    <input type="color" name="bg_color_start" id="bg_color_start" value="{{ old('bg_color_start', $promotion->bg_color_start ?? '#FF8904') }}"
+                        class="h-10 w-14 p-1 rounded border border-gray-200 cursor-pointer">
+                    <span class="text-sm text-gray-500">Left color</span>
+                </div>
+            </div>
+            
+            <div class="space-y-1">
+                <label for="bg_color_end" class="block text-sm font-medium text-gray-700">Banner Background End Color</label>
+                <div class="flex items-center gap-3">
+                    <input type="color" name="bg_color_end" id="bg_color_end" value="{{ old('bg_color_end', $promotion->bg_color_end ?? '#FFB156') }}"
+                        class="h-10 w-14 p-1 rounded border border-gray-200 cursor-pointer">
+                    <span class="text-sm text-gray-500">Right color</span>
+                </div>
+            </div>
+        </div>
+
         <div class="space-y-1">
             <label for="image" class="block text-sm font-medium text-gray-700">Banner Image</label>
             <input type="file" name="image" id="image" accept="image/*"

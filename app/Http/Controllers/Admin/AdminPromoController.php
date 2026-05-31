@@ -44,6 +44,8 @@ class AdminPromoController extends Controller
             'end_date'       => ['nullable', 'date', 'after_or_equal:start_date'],
             'is_active'      => ['boolean'],
             'image'          => ['nullable', 'image', 'max:2048'],
+            'bg_color_start' => ['nullable', 'string', 'max:10'],
+            'bg_color_end'   => ['nullable', 'string', 'max:10'],
         ]);
 
         $validated['code'] = strtoupper($validated['code']);
@@ -132,6 +134,8 @@ class AdminPromoController extends Controller
             'end_date'       => ['nullable', 'date'],
             'is_active'      => ['boolean'],
             'image'          => ['nullable', 'image', 'max:2048'],
+            'bg_color_start' => ['nullable', 'string', 'max:10'],
+            'bg_color_end'   => ['nullable', 'string', 'max:10'],
         ]);
 
         $validated['code'] = strtoupper($validated['code']);

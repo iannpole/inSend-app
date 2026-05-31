@@ -176,7 +176,7 @@ class RecipeBotService implements AiServiceInterface
                     'HTTP-Referer' => env('APP_URL', 'http://localhost'),
                     'X-Title' => 'InSend App',
                 ])->timeout(30)->post('https://openrouter.ai/api/v1/chat/completions', [
-                    'model' => env('OPENROUTER_MODEL', 'deepseek/deepseek-chat'),
+                    'model' => env('OPENROUTER_VISION_MODEL', env('OPENROUTER_MODEL', 'google/gemini-2.0-flash-exp:free')),
                     'messages' => [
                         [
                             'role' => 'user',

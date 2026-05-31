@@ -92,27 +92,6 @@
             </div>
         </div>
 
-        <!-- Download App Card -->
-        <div class="p-4 mt-auto">
-            <div class="bg-gradient-to-br from-[#00473B] to-[#0A2E26] rounded-2xl p-5 text-white relative overflow-hidden group cursor-pointer shadow-md">
-                <!-- Abstract waves -->
-                <div class="absolute inset-0 opacity-20">
-                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" class="w-full h-full">
-                        <path d="M0,50 Q25,25 50,50 T100,50 v50 h-100 z" fill="#fff" />
-                    </svg>
-                </div>
-                <div class="relative z-10">
-                    <div class="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center mb-3">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-                    </div>
-                    <h4 class="font-semibold text-sm mb-1 leading-tight">Download our<br>Mobile App</h4>
-                    <p class="text-[10px] text-gray-300 mb-3">Get easy in another way</p>
-                    <button class="w-full bg-[#115E3B] hover:bg-[#0E4D30] text-white text-xs font-medium py-2 rounded-lg transition-colors shadow-inner border border-white/10">
-                        Download
-                    </button>
-                </div>
-            </div>
-        </div>
     </aside>
 
     <!-- Main Content -->
