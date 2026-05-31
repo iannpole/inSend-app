@@ -498,6 +498,22 @@ class RecipeBotService implements AiServiceInterface
                     // Kalikan amount dan bulatkan (misal: 1.5)
                     $ing['amount'] = round($ing['amount'] * $scale, 2);
                 }
+
+                // Map to actual product if available
+                if (isset($ing['name'])) {
+                    $slug = \Illuminate\Support\Str::slug($ing['name']);
+                    $product = \App\Models\Product::where('slug', $slug)
+                        ->orWhere('name', 'LIKE', '%' . $ing['name'] . '%')
+                        ->first();
+                    if ($product) {
+                        $ing['product_id'] = (string) $product->_id;
+                        $ing['price'] = $product->effective_price ?? $product->base_price;
+                        if (!empty($product->images) && isset($product->images[0])) {
+                            $ing['imageUrl'] = $product->images[0];
+                        }
+                    }
+                }
+
                 return $ing;
             }, $recipe->ingredients ?? []);
 
