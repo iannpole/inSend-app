@@ -53,8 +53,59 @@ class AdminPromoController extends Controller
             $validated['image_url'] = $request->file('image')->store('promotions', 'public');
         }
 
-        Promotion::create($validated);
+        $promotion = Promotion::create($validated);
+
+        // --- Trigger Firebase Push Notification ---
+        $this->sendFirebaseNotification($promotion);
+
         return redirect()->route('admin.promotions.index')->with('success', 'Promosi berhasil ditambahkan!');
+    }
+
+    /**
+     * Script Dasar Firebase Cloud Messaging (Pengirim Notifikasi)
+     */
+    private function sendFirebaseNotification(Promotion $promo)
+    {
+        // 1. Dapatkan Server Key dari Firebase Console -> Project Settings -> Cloud Messaging (Legacy)
+        // Atau untuk jangka panjang bisa install package "kreait/firebase-php" untuk FCM HTTP v1.
+        $serverKey = env('FCM_SERVER_KEY');
+        
+        if (empty($serverKey)) {
+            \Illuminate\Support\Facades\Log::info('FCM_SERVER_KEY kosong. Skip kirim notifikasi.');
+            return;
+        }
+
+        // 2. Tentukan Topik (Kirim ke semua user yang subscribe ke topik "promotions")
+        $topic = '/topics/promotions';
+
+        // 3. Siapkan Teks Notifikasi (Copywriting AIDA)
+        $title = "🎉 Promo Baru: {$promo->name}!";
+        $body  = "Gunakan kode {$promo->code} untuk diskon. Yuk belanja sekarang sebelum kehabisan!";
+
+        // 4. Siapkan Payload Data (Agar bisa dibuka via Deep Linking di Flutter)
+        $data = [
+            'type'     => 'promotion',
+            'promo_id' => (string) $promo->_id,
+            'code'     => $promo->code,
+            'click_action' => 'FLUTTER_NOTIFICATION_CLICK' // Standard Flutter FCM action
+        ];
+
+        try {
+            \Illuminate\Support\Facades\Http::withHeaders([
+                'Authorization' => 'key=' . $serverKey,
+                'Content-Type'  => 'application/json',
+            ])->post('https://fcm.googleapis.com/fcm/send', [
+                'to'           => $topic,
+                'notification' => [
+                    'title' => $title,
+                    'body'  => $body,
+                    'sound' => 'default',
+                ],
+                'data' => $data,
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('FCM Send Error: ' . $e->getMessage());
+        }
     }
 
     public function edit(string $id)
