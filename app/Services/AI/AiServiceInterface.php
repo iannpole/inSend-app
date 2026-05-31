@@ -14,5 +14,5 @@ interface AiServiceInterface
      * Process a chat message with an image path.
      * Image-aware features are optional; implementations may fallback to text.
      */
-    public function chatWithImage(string $message, string $imagePath, array $history = []): string;
+    public function chatWithImage(string $message, string $imagePath, array $history = [], string $originalFilename = ''): string;
 }

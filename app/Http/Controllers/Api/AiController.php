@@ -40,13 +40,14 @@ class AiController extends Controller
             ]);
         }
 
-        // Handle image upload (disimpan URL-nya, tapi bot tidak analisis gambar)
         $imageUrl  = null;
         $imagePath = null;
+        $originalFilename = '';
 
         if ($request->hasFile('image')) {
             $file      = $request->file('image');
             $imagePath = $file->getPathname();
+            $originalFilename = $file->getClientOriginalName();
             $imageUrl  = $file->store('ai-images', 'public');
         }
 
@@ -59,7 +60,7 @@ class AiController extends Controller
         // Jalankan RecipeBotService
         try {
             $rawResponse = $imagePath
-                ? $this->aiService->chatWithImage($message, $imagePath, $history)
+                ? $this->aiService->chatWithImage($message, $imagePath, $history, $originalFilename)
                 : $this->aiService->chat($message, $history);
         } catch (\Exception $e) {
             return response()->json([

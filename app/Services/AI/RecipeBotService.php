@@ -117,13 +117,13 @@ class RecipeBotService implements AiServiceInterface
         return $this->formatResponse($recipes, $suggestions, null, $detectedTags, $message, $requestedServings);
     }
 
-    public function chatWithImage(string $message, string $imagePath, array $history = []): string
+    public function chatWithImage(string $message, string $imagePath, array $history = [], string $originalFilename = ''): string
     {
         // ── Analyze image without external AI ──
         // Strategy: extract hints from filename, combine with user message,
         // and use image metadata to infer food context.
         
-        $imageKeywords = $this->analyzeImageHints($imagePath);
+        $imageKeywords = $this->analyzeImageHints($imagePath, $originalFilename);
         
         // Combine user message with image-derived context
         $enrichedMessage = $message;
@@ -162,12 +162,12 @@ class RecipeBotService implements AiServiceInterface
     // IMAGE ANALYSIS — extract food hints without external AI
     // ---------------------------------------------------------------
 
-    private function analyzeImageHints(string $imagePath): array
+    private function analyzeImageHints(string $imagePath, string $originalFilename = ''): array
     {
         $keywords = [];
         
         // 1. Analyze filename for food-related words
-        $filename = mb_strtolower(pathinfo($imagePath, PATHINFO_FILENAME));
+        $filename = mb_strtolower(pathinfo($originalFilename ?: $imagePath, PATHINFO_FILENAME));
         $filename = preg_replace('/[^a-z0-9\s_\-]/', ' ', $filename);
         
         $foodWords = [
