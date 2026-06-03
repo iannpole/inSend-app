@@ -157,7 +157,7 @@
                 <div class="flex gap-3 mt-4 flex-wrap" id="existing-images-container">
                     @foreach($product->images as $img)
                         <div class="relative group" id="img-container-{{ md5($img) }}">
-                            <img src="{{ Str::startsWith($img, 'http') ? $img : asset('storage/' . $img) }}" class="h-24 w-24 object-cover rounded-xl border border-gray-200">
+                            <img src="{{ Str::startsWith($img, 'http') ? $img : asset('storage/' . $img) }}" class="h-24 w-24 object-cover rounded-xl border border-gray-200" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=Image&color=00473B&background=E6F2ED';">
                             <button type="button" onclick="removeImage('{{ $img }}', 'img-container-{{ md5($img) }}')" class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
                                 ✕
                             </button>

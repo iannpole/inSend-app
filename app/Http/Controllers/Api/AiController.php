@@ -80,15 +80,19 @@ class AiController extends Controller
         $parsed = json_decode($rawResponse, true);
 
         return response()->json([
-            'status'          => 'success',
-            'conversation_id' => (string) $conversation->_id,
-            'mode'            => $mode,
-            'reply'           => $parsed['message'] ?? $rawResponse,
-            'type'            => $parsed['type'] ?? 'chat',
-            'recipes'         => $parsed['recipes'] ?? [],
-            'corrections'     => $parsed['corrections'] ?? [],
-            'detected_intent' => $parsed['detected_intent'] ?? [],
-            'total_found'     => $parsed['total_found'] ?? 0,
+            'status'            => 'success',
+            'conversation_id'   => (string) $conversation->_id,
+            'mode'              => $mode,
+            'reply'             => $parsed['message'] ?? $rawResponse,
+            'type'              => $parsed['type'] ?? 'chat',
+            'recipes'           => $parsed['recipes'] ?? [],
+            'products'          => $parsed['products'] ?? [],
+            'corrections'       => $parsed['corrections'] ?? [],
+            'detected_intent'   => $parsed['detected_intent'] ?? [],
+            'total_found'       => $parsed['total_found'] ?? 0,
+            // Vision AI diagnostics — true jika gambar berhasil dianalisis Gemini
+            'image_analyzed'    => $parsed['image_analyzed'] ?? false,
+            'detected_keywords' => $parsed['detected_keywords'] ?? [],
         ]);
     }
 

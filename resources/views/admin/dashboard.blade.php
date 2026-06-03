@@ -121,21 +121,39 @@
             <div class="bg-white rounded-[24px] p-6 border border-gray-100 shadow-sm flex flex-col h-[280px]">
                 <h3 class="text-lg font-bold text-gray-900 tracking-tight mb-4">Order Progress</h3>
                 <div class="flex-1 flex flex-col items-center justify-center relative">
-                    <!-- Semi-circle chart mock -->
-                    <div class="relative w-40 h-20 overflow-hidden mb-2">
-                        <div class="absolute top-0 left-0 w-40 h-40 rounded-full border-[16px] border-gray-100"></div>
-                        <div class="absolute top-0 left-0 w-40 h-40 rounded-full border-[16px] border-[#115E3B] border-r-transparent border-b-transparent transform rotate-45"></div>
-                        <div class="absolute top-0 left-0 w-40 h-40 rounded-full border-[16px] border-[#41B06E] border-l-transparent border-t-transparent border-b-transparent transform -rotate-45"></div>
-                    </div>
-                    <div class="absolute bottom-10 flex flex-col items-center">
-                        <span class="text-3xl font-bold text-gray-900">{{ $orderProgress['completed'] }}%</span>
-                        <span class="text-[10px] text-gray-400 font-medium">Orders Delivered</span>
+                    <!-- Dynamic Donut Chart using conic-gradient -->
+                    @php
+                        // Calculate angles for conic gradient
+                        $completedPct = $orderProgress['completed'] ?? 0;
+                        $inProgressPct = $orderProgress['in_progress'] ?? 0;
+                        $pendingPct = $orderProgress['pending'] ?? 0;
+                        
+                        // If all are 0, show full gray
+                        if ($completedPct == 0 && $inProgressPct == 0 && $pendingPct == 0) {
+                            $pendingPct = 100;
+                        }
+
+                        $completedDeg = $completedPct * 3.6;
+                        $inProgressDeg = $completedDeg + ($inProgressPct * 3.6);
+                        $pendingDeg = 360;
+                    @endphp
+                    <div class="relative w-40 h-40 rounded-full flex items-center justify-center mb-2" 
+                         style="background: conic-gradient(
+                            #115E3B 0deg {{ $completedDeg }}deg, 
+                            #41B06E {{ $completedDeg }}deg {{ $inProgressDeg }}deg, 
+                            #E5E7EB {{ $inProgressDeg }}deg {{ $pendingDeg }}deg
+                         );">
+                        <!-- Inner white circle to make it a donut -->
+                        <div class="absolute w-32 h-32 bg-white rounded-full flex flex-col items-center justify-center shadow-inner">
+                            <span class="text-3xl font-bold text-gray-900">{{ $stats['orders'] }}</span>
+                            <span class="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Total Orders</span>
+                        </div>
                     </div>
                 </div>
                 <div class="flex justify-center gap-4 mt-2">
-                    <div class="flex items-center gap-1.5" title="{{ $orderProgress['completed'] }}%"><div class="w-2.5 h-2.5 rounded-full bg-[#115E3B]"></div><span class="text-[10px] text-gray-500 font-medium">Completed</span></div>
-                    <div class="flex items-center gap-1.5" title="{{ $orderProgress['in_progress'] }}%"><div class="w-2.5 h-2.5 rounded-full bg-[#41B06E]"></div><span class="text-[10px] text-gray-500 font-medium">In Progress</span></div>
-                    <div class="flex items-center gap-1.5" title="{{ $orderProgress['pending'] }}%"><div class="w-2.5 h-2.5 rounded-full bg-gray-200"></div><span class="text-[10px] text-gray-500 font-medium">Pending</span></div>
+                    <div class="flex items-center gap-1.5" title="{{ $completedPct }}%"><div class="w-2.5 h-2.5 rounded-full bg-[#115E3B]"></div><span class="text-[10px] text-gray-500 font-medium">Completed ({{ $completedPct }}%)</span></div>
+                    <div class="flex items-center gap-1.5" title="{{ $inProgressPct }}%"><div class="w-2.5 h-2.5 rounded-full bg-[#41B06E]"></div><span class="text-[10px] text-gray-500 font-medium">In Progress ({{ $inProgressPct }}%)</span></div>
+                    <div class="flex items-center gap-1.5" title="{{ $pendingPct }}%"><div class="w-2.5 h-2.5 rounded-full bg-gray-200"></div><span class="text-[10px] text-gray-500 font-medium">Pending ({{ $pendingPct }}%)</span></div>
                 </div>
             </div>
         </div>

@@ -54,8 +54,9 @@ class OrderController extends Controller
         $items     = $validated['items'];
         $orderItems = [];
         $subtotal   = 0;
+        $validatedProducts = []; // cache produk agar tidak double-query
 
-        // Validasi stok dan kalkulasi harga — dengan locking
+        // Validasi stok dan kalkulasi harga
         foreach ($items as $item) {
             $product = Product::where('_id', $item['product_id'])->first();
 
@@ -93,15 +94,17 @@ class OrderController extends Controller
                 'price'      => $price,
                 'subtotal'   => $itemSubtotal,
             ];
+
+            // Cache produk — hindari double-query saat decrement stok
+            $validatedProducts[(string) $product->_id] = [
+                'model' => $product,
+                'qty'   => $item['qty'],
+            ];
         }
 
-        // Kurangi stok dengan atomic operation
-        foreach ($items as $item) {
-            $product = Product::where('_id', $item['product_id'])->first();
-            if ($product) {
-                $newStock = max(0, ($product->stock_quantity ?? 0) - $item['qty']);
-                $product->update(['stock_quantity' => $newStock]);
-            }
+        // Kurangi stok — gunakan produk yang sudah di-cache (tanpa query ulang)
+        foreach ($validatedProducts as $entry) {
+            $entry['model']->decrementStock($entry['qty']);
         }
 
         // Kalkulasi total
@@ -191,9 +194,7 @@ class OrderController extends Controller
             foreach ($order->items as $item) {
                 $product = Product::where('_id', $item['product_id'])->first();
                 if ($product) {
-                    $product->update([
-                        'stock_quantity' => ($product->stock_quantity ?? 0) + $item['qty']
-                    ]);
+                    $product->incrementStock($item['qty']);
                 }
             }
         }
@@ -233,9 +234,7 @@ class OrderController extends Controller
         foreach ($order->items as $item) {
             $product = Product::where('_id', $item['product_id'])->first();
             if ($product) {
-                $product->update([
-                    'stock_quantity' => ($product->stock_quantity ?? 0) + $item['qty']
-                ]);
+                $product->incrementStock($item['qty']);
             }
         }
 

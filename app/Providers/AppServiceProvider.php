@@ -24,9 +24,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        
         Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
+
+        // Bagikan aktivitas terbaru ke komponen layout admin (seperti notifikasi)
+        \Illuminate\Support\Facades\View::composer('admin.layouts.app', function ($view) {
+            $globalActivities = \App\Models\ActivityLog::orderBy('created_at', 'desc')->take(5)->get();
+            $view->with('globalActivities', $globalActivities);
+        });
     }
-
-
 }

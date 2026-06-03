@@ -251,8 +251,9 @@ class CartController extends Controller
         }
 
         // Validate stock & build order items
-        $orderItems = [];
-        $subtotal   = 0;
+        $orderItems        = [];
+        $subtotal          = 0;
+        $validatedProducts = []; // cache produk agar tidak double-query
 
         foreach ($cart->items as $item) {
             $product = Product::find($item['product_id']);
@@ -284,15 +285,17 @@ class CartController extends Controller
                 'price'      => $price,
                 'subtotal'   => $itemSubtotal,
             ];
+
+            // Cache produk — hindari double-query saat decrement stok
+            $validatedProducts[(string) $product->_id] = [
+                'model' => $product,
+                'qty'   => $item['qty'],
+            ];
         }
 
-        // Decrement stock
-        foreach ($cart->items as $item) {
-            $product = Product::where('_id', $item['product_id'])->first();
-            if ($product) {
-                $newStock = max(0, ($product->stock_quantity ?? 0) - $item['qty']);
-                $product->update(['stock_quantity' => $newStock]);
-            }
+        // Decrement stok — gunakan produk yang sudah di-cache (tanpa query ulang)
+        foreach ($validatedProducts as $entry) {
+            $entry['model']->decrementStock($entry['qty']);
         }
 
         // Calculate totals

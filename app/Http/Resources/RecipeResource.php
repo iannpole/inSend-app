@@ -7,10 +7,26 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class RecipeResource extends JsonResource
 {
+    /**
+     * Build a full storage URL from a relative path.
+     * Returns null if the path is empty/null.
+     */
+    private function resolveImageUrl(?string $path): ?string
+    {
+        if (!$path) return null;
+        return str_starts_with($path, 'http') ? $path : asset('storage/' . $path);
+    }
+
     public function toArray(Request $request): array
     {
-        $images = $this->images ?? [];
-        $imageUrls = array_map(fn($img) => str_starts_with($img, 'http') ? $img : asset('storage/' . $img), $images);
+        $rawImages = $this->images ?? [];
+
+        // Only the first image is resolved eagerly — used as thumbnail in list views.
+        // Full images array is resolved lazily only when accessing recipe detail.
+        $thumbnailPath = $rawImages[0] ?? null;
+        // Deteksi apakah ini detail view (show) atau list view (index)
+        $routeAction = $request->route()?->getActionMethod();
+        $isDetail    = in_array($routeAction, ['show']) || $request->boolean('with_images');
 
         return [
             'id'           => (string) $this->_id,
@@ -25,7 +41,14 @@ class RecipeResource extends JsonResource
             'servings'     => $this->servings,
             'difficulty'   => $this->difficulty,
             'tags'         => $this->tags ?? [],
-            'images'       => $imageUrls,
+            // thumbnail: satu gambar untuk list view — hemat bandwidth
+            'thumbnail'    => $this->resolveImageUrl($thumbnailPath),
+            // images: semua gambar, hanya dikirim saat detail view atau ?with_images=1
+            'images'       => $isDetail
+                ? array_values(array_filter(array_map(
+                    fn($img) => $this->resolveImageUrl($img), $rawImages
+                )))
+                : [],
             'is_published' => $this->is_published,
             'source'       => $this->source,
             'nutrition'    => $this->nutrition,

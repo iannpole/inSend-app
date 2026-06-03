@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Vision Tester — InSend</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f0f1a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #6366f1, #a78bfa, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+
+    .header p {
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+
+    .card {
+      background: #1e1e2e;
+      border: 1px solid #2d2d45;
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 680px;
+      margin-bottom: 20px;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #a78bfa;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    textarea,
+    select {
+      width: 100%;
+      background: #12121f;
+      border: 1px solid #2d2d45;
+      border-radius: 10px;
+      color: #e2e8f0;
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color .2s;
+      margin-bottom: 16px;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: #6366f1;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .upload-zone {
+      border: 2px dashed #2d2d45;
+      border-radius: 12px;
+      padding: 28px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .2s;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .upload-zone:hover,
+    .upload-zone.dragover {
+      border-color: #6366f1;
+      background: rgba(99, 102, 241, .06);
+    }
+
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: none;
+    }
+
+    .upload-zone .icon {
+      font-size: 2.4rem;
+      margin-bottom: 8px;
+    }
+
+    .upload-zone p {
+      color: #64748b;
+      font-size: 0.85rem;
+    }
+
+    .upload-zone p span {
+      color: #6366f1;
+    }
+
+    #preview-wrap {
+      display: none;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    #preview-wrap img {
+      max-width: 100%;
+      max-height: 260px;
+      border-radius: 10px;
+      border: 2px solid #2d2d45;
+      object-fit: contain;
+    }
+
+    #preview-name {
+      font-size: 0.78rem;
+      color: #64748b;
+      margin-top: 6px;
+    }
+
+    .btn {
+      width: 100%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .2s, transform .1s;
+    }
+
+    .btn:hover {
+      opacity: .9;
+    }
+
+    .btn:active {
+      transform: scale(.98);
+    }
+
+    .btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+    }
+
+    .status-bar.loading {
+      background: rgba(99, 102, 241, .12);
+      color: #a78bfa;
+    }
+
+    .status-bar.success {
+      background: rgba(34, 197, 94, .12);
+      color: #4ade80;
+    }
+
+    .status-bar.error {
+      background: rgba(239, 68, 68, .12);
+      color: #f87171;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(167, 139, 250, .3);
+      border-top-color: #a78bfa;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Response panels */
+    .response-section {
+      margin-top: 4px;
+    }
+
+    .response-section h3 {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .badge.vision {
+      background: rgba(56, 189, 248, .15);
+      color: #38bdf8;
+    }
+
+    .badge.bot {
+      background: rgba(167, 139, 250, .15);
+      color: #a78bfa;
+    }
+
+    .badge.error {
+      background: rgba(239, 68, 68, .15);
+      color: #f87171;
+    }
+
+    .badge.ok {
+      background: rgba(34, 197, 94, .15);
+      color: #4ade80;
+    }
+
+    .reply-box {
+      background: #12121f;
+      border: 1px solid #2d2d45;
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 0.88rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #cbd5e1;
+      margin-bottom: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .keywords-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .kw-tag {
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 0.78rem;
+      background: rgba(99, 102, 241, .18);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, .25);
+    }
+
+    .json-raw {
+      background: #0a0a14;
+      border: 1px solid #1e1e30;
+      border-radius: 10px;
+      padding: 14px;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 0.78rem;
+      color: #64748b;
+      max-height: 280px;
+      overflow-y: auto;
+      white-space: pre;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #1e1e30;
+      margin: 16px 0;
+    }
+
+    /* Step indicators */
+    .steps {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .step {
+      flex: 1;
+      min-width: 120px;
+      background: #12121f;
+      border: 1px solid #2d2d45;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 0.78rem;
+      color: #64748b;
+      text-align: center;
+    }
+
+    .step .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #1e1e2e;
+      border: 1px solid #2d2d45;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.75rem;
+      margin-bottom: 6px;
+    }
+
+    .step.active .step-num {
+      background: #6366f1;
+      border-color: #6366f1;
+      color: #fff;
+    }
+
+    .step.done .step-num {
+      background: #22c55e;
+      border-color: #22c55e;
+      color: #fff;
+    }
+
+    .step.active {
+      border-color: rgba(99, 102, 241, .4);
+      color: #a78bfa;
+    }
+
+    .step.done {
+      border-color: rgba(34, 197, 94, .4);
+      color: #4ade80;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <h1>🔬 AI Vision Tester</h1>
+    <p>Test apakah Gemini Flash bisa mendeteksi bahan makanan dari gambar yang dikirim mobile</p>
+  </div>
+
+  <!-- Step 1: Config -->
+  <div class="card">
+    <h2>⚙️ Konfigurasi</h2>
+
+    <label>Base URL API Laravel</label>
+    <input type="text" id="base-url" value="http://localhost:8000" />
+
+    <label>Bearer Token (dari login mobile/Postman)</label>
+    <input type="password" id="bearer-token" placeholder="eyJ0eXAiOiJKV1QiLCJhbGci..." />
+
+    <div class="steps" id="steps">
+      <div class="step" id="step-upload">
+        <div class="step-num">1</div>Upload Gambar
+      </div>
+      <div class="step" id="step-send">
+        <div class="step-num">2</div>Kirim ke API
+      </div>
+      <div class="step" id="step-vision">
+        <div class="step-num">3</div>Vision AI
+      </div>
+      <div class="step" id="step-result">
+        <div class="step-num">4</div>Hasil Resep
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Upload & Send -->
+  <div class="card">
+    <h2>📤 Kirim Gambar ke AI</h2>
+
+    <div class="upload-zone" id="upload-zone">
+      <input type="file" id="image-input" accept="image/*" />
+      <div class="icon">🖼️</div>
+      <p>Drag & drop gambar bahan makanan, atau <span>klik untuk pilih</span></p>
+      <p style="margin-top:4px;font-size:0.75rem">JPG, PNG, WEBP — maks 10MB</p>
+    </div>
+
+    <div id="preview-wrap">
+      <img id="preview-img" src="" alt="Preview" />
+      <div id="preview-name"></div>
+    </div>
+
+    <label>Pesan teks (opsional)</label>
+    <textarea id="user-message"
+      placeholder="Contoh: 'Ada bahan apa yang bisa dimasak?' atau biarkan kosong untuk test gambar saja"></textarea>
+
+    <div id="status-wrap" style="display:none"></div>
+
+    <button class="btn" id="send-btn" onclick="sendToAI()">
+      🚀 Kirim ke Gemini Vision
+    </button>
+  </div>
+
+  <!-- Results -->
+  <div class="card" id="result-card" style="display:none">
+    <h2>📊 Hasil Analisis</h2>
+    <div class="response-section" id="result-content"></div>
+  </div>
+
+  <!-- Direct Vision Test (bypass Laravel) -->
+  <div class="card">
+    <h2>🧪 Test Langsung OpenRouter Vision API</h2>
+    <p style="color:#64748b;font-size:0.82rem;margin-bottom:16px">
+      Test OpenRouter Gemini Vision <b>langsung tanpa melewati Laravel</b> — untuk memastikan API key & model bekerja.
+    </p>
+
+    <label>OpenRouter API Key</label>
+    <input type="password" id="or-key" placeholder="sk-or-v1-..." />
+
+    <label>Model</label>
+    <select id="or-model">
+      <option value="nvidia/nemotron-nano-12b-v2-vl:free">nvidia/nemotron-nano-12b-v2-vl:free ✅ Vision (Free)</option>
+      <option value="google/gemma-4-31b-it:free">google/gemma-4-31b-it:free (Free — text only)</option>
+      <option value="moonshotai/kimi-k2.6:free">moonshotai/kimi-k2.6:free (Free)</option>
+      <option value="google/gemma-4-26b-a4b-it:free">google/gemma-4-26b-a4b-it:free (Free)</option>
+      <option value="openrouter/free">openrouter/free (Auto-route ke free model)</option>
+      <option value="google/gemini-flash-1.5">google/gemini-flash-1.5 (Berbayar — Vision OK)</option>
+      <option value="openai/gpt-4o-mini">openai/gpt-4o-mini (Berbayar — Vision OK)</option>
+    </select>
+
+    <div class="upload-zone" id="upload-zone-2">
+      <input type="file" id="image-input-2" accept="image/*" />
+      <div class="icon">📷</div>
+      <p>Pilih gambar untuk test langsung</p>
+    </div>
+
+    <div id="preview-wrap-2" style="display:none;margin-bottom:16px;text-align:center">
+      <img id="preview-img-2" src="" style="max-height:180px;border-radius:8px;border:1px solid #2d2d45" />
+    </div>
+
+    <div id="direct-status" style="display:none"></div>
+
+    <button class="btn" id="direct-btn" onclick="testDirectVision()">
+      ⚡ Test Langsung OpenRouter Vision
+    </button>
+
+    <div id="direct-result" style="display:none;margin-top:16px"></div>
+  </div>
+
+  <script>
+    // ── Preview handlers ──────────────────────────────────────────────
+    const imageInput = document.getElementById('image-input');
+    const previewImg = document.getElementById('preview-img');
+    const previewWrap = document.getElementById('preview-wrap');
+    const previewName = document.getElementById('preview-name');
+
+    imageInput.addEventListener('change', () => {
+      const file = imageInput.files[0];
+      if (!file) return;
+      previewImg.src = URL.createObjectURL(file);
+      previewWrap.style.display = 'block';
+      previewName.textContent = `📁 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+      setStep('upload', 'done');
+    });
+
+    const imageInput2 = document.getElementById('image-input-2');
+    const previewImg2 = document.getElementById('preview-img-2');
+    const previewWrap2 = document.getElementById('preview-wrap-2');
+    imageInput2.addEventListener('change', () => {
+      const file = imageInput2.files[0];
+      if (!file) return;
+      previewImg2.src = URL.createObjectURL(file);
+      previewWrap2.style.display = 'block';
+    });
+
+    // Drag & drop
+    ['upload-zone', 'upload-zone-2'].forEach(id => {
+      const zone = document.getElementById(id);
+      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', e => {
+        e.preventDefault(); zone.classList.remove('dragover');
+        const input = zone.querySelector('input[type=file]');
+        const file = e.dataTransfer.files[0];
+        if (!file) return;
+        const dt = new DataTransfer(); dt.items.add(file);
+        input.files = dt.files;
+        input.dispatchEvent(new Event('change'));
+      });
+    });
+
+    // ── Step manager ──────────────────────────────────────────────────
+    function setStep(id, state) {
+      const el = document.getElementById('step-' + id);
+      if (!el) return;
+      el.className = 'step ' + state;
+      if (state === 'done') el.querySelector('.step-num').textContent = '✓';
+    }
+
+    // ── Status bar ────────────────────────────────────────────────────
+    function showStatus(type, msg) {
+      const wrap = document.getElementById('status-wrap');
+      wrap.style.display = 'flex';
+      wrap.innerHTML = `<div class="status-bar ${type}">
+    ${type === 'loading' ? '<div class="spinner"></div>' : (type === 'success' ? '✅' : '❌')}
+    <span>${msg}</span>
+  </div>`;
+    }
+
+    // ── Main: Send to Laravel AI endpoint ────────────────────────────
+    async function sendToAI() {
+      const baseUrl = document.getElementById('base-url').value.trim().replace(/\/$/, '');
+      const token = document.getElementById('bearer-token').value.trim();
+      const message = document.getElementById('user-message').value.trim();
+      const file = imageInput.files[0];
+      const btn = document.getElementById('send-btn');
+
+      if (!token) { showStatus('error', 'Isi Bearer Token terlebih dahulu'); return; }
+      if (!file && !message) { showStatus('error', 'Upload gambar atau isi pesan terlebih dahulu'); return; }
+
+      btn.disabled = true;
+      setStep('send', 'active');
+      showStatus('loading', 'Mengirim ke Laravel API...');
+
+      const form = new FormData();
+      if (message) form.append('message', message);
+      if (file) form.append('image', file, file.name);
+
+      let data, httpStatus;
+      try {
+        const res = await fetch(`${baseUrl}/api/ai/chat`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+          body: form,
+        });
+        httpStatus = res.status;
+        data = await res.json();
+      } catch (err) {
+        showStatus('error', `Koneksi gagal: ${err.message}`);
+        btn.disabled = false;
+        return;
+      }
+
+      setStep('send', 'done');
+
+      if (httpStatus !== 200 && httpStatus !== 201) {
+        showStatus('error', `HTTP ${httpStatus}: ${data?.message || JSON.stringify(data)}`);
+        btn.disabled = false;
+        return;
+      }
+
+      showStatus('success', `HTTP ${httpStatus} — Response diterima dari server`);
+      setStep('vision', data.type !== 'error' ? 'done' : 'active');
+      setStep('result', 'done');
+
+      renderResult(data, file);
+      btn.disabled = false;
+    }
+
+    function renderResult(data, file) {
+      const card = document.getElementById('result-card');
+      const content = document.getElementById('result-content');
+      card.style.display = 'block';
+
+      // Vision status badge
+      const imageAnalyzed = data.image_analyzed === true;
+      const detectedKw = data.detected_keywords ?? [];
+      const reply = data.reply ?? '—';
+      const type = data.type ?? '—';
+      const recipes = data.recipes ?? [];
+      const products = data.products ?? [];
+
+      let html = '';
+
+      // Vision detection status
+      html += `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <span class="badge ${imageAnalyzed ? 'ok' : 'error'}">
+      ${imageAnalyzed ? '✅ Vision AI Aktif' : '⚠️ Vision AI Tidak Aktif (heuristik)'}
+    </span>
+    <span class="badge vision">type: ${type}</span>
+    <span class="badge bot">Resep: ${recipes.length}</span>
+    <span class="badge ok">Produk: ${products.length}</span>
+  </div>`;
+
+      // Detected keywords
+      if (detectedKw.length > 0) {
+        html += `<h3>🔍 Kata Kunci Terdeteksi dari Gambar</h3>
+    <div class="keywords-wrap">
+      ${detectedKw.map(k => `<span class="kw-tag">${k}</span>`).join('')}
+    </div>`;
+      } else if (file) {
+        html += `<div class="status-bar error" style="margin-bottom:12px">
+      ❌ Tidak ada keyword terdeteksi dari gambar — Vision AI mungkin gagal atau menggunakan fallback heuristik
+    </div>`;
+      }
+
+      // AI Reply
+      html += `<hr class="divider"><h3>💬 Balasan AI</h3>
+  <div class="reply-box">${escapeHtml(reply)}</div>`;
+
+      // Products list (Direct Buy)
+      if (products.length > 0) {
+        html += `<h3>🛒 Bahan yang Tersedia di Toko (Beli Langsung)</h3>`;
+        html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">`;
+        products.forEach(p => {
+            html += `<div style="background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:1.4rem;margin-bottom:4px">📦</div>
+                <div style="font-weight:600;font-size:0.85rem;color:#38bdf8">${escapeHtml(p.name)}</div>
+                <div style="font-size:0.8rem;color:#94a3b8;margin-top:2px">Rp${parseInt(p.price).toLocaleString('id-ID')} / ${p.unit}</div>
+                <button style="margin-top:8px;width:100%;padding:4px;border-radius:4px;background:#38bdf8;color:#0f172a;border:none;font-size:0.75rem;cursor:pointer">+ Keranjang</button>
+            </div>`;
+        });
+        html += `</div>`;
+      }
+
+      // Recipes list
+      if (recipes.length > 0) {
+        html += `<h3>🍽️ Resep yang Direkomendasikan (Beli Sesuai Resep)</h3>`;
+        recipes.forEach(r => {
+          html += `<div style="background:#0a0a14;border:1px solid #1e1e30;border-radius:8px;padding:12px;margin-bottom:8px">
+        <div style="font-weight:600;color:#a78bfa">${escapeHtml(r.title ?? '')}</div>
+        <div style="font-size:0.8rem;color:#64748b;margin-top:4px">
+          ${r.category ?? ''} · ${r.difficulty ?? ''} · ⏱ ${r.total_time ?? 0} menit
+        </div>
+        <div style="font-size:0.78rem;color:#475569;margin-top:6px">
+          Bahan: ${(r.ingredients ?? []).slice(0, 4).map(i => i.name).join(', ')}${(r.ingredients?.length > 4) ? '...' : ''}
+        </div>
+      </div>`;
+        });
+      }
+
+      // Raw JSON
+      html += `<hr class="divider"><h3>📋 Raw JSON Response</h3>
+  <div class="json-raw">${escapeHtml(JSON.stringify(data, null, 2))}</div>`;
+
+      content.innerHTML = html;
+      card.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ── Direct OpenRouter Vision Test ────────────────────────────────
+    async function testDirectVision() {
+      const key = document.getElementById('or-key').value.trim();
+      const model = document.getElementById('or-model').value;
+      const file = imageInput2.files[0];
+      const btn = document.getElementById('direct-btn');
+      const statusEl = document.getElementById('direct-status');
+      const resultEl = document.getElementById('direct-result');
+
+      if (!key) { showDirectStatus('error', 'Isi OpenRouter API Key'); return; }
+      if (!file) { showDirectStatus('error', 'Pilih gambar terlebih dahulu'); return; }
+
+      btn.disabled = true;
+      showDirectStatus('loading', `Mengirim ke OpenRouter (${model})...`);
+      resultEl.style.display = 'none';
+
+      // Convert image to base64
+      const base64 = await fileToBase64(file);
+      const mime = file.type || 'image/jpeg';
+
+      let response, data;
+      try {
+        response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${key}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'http://localhost:8000',
+            'X-Title': 'InSend Vision Tester',
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: 'Analyze this food/grocery image. Return ONLY a comma-separated list of core ingredient keywords in Indonesian (e.g., tempe, ayam, sayur, bawang, beras, daging, ikan). If no food is found, return "tidak_ada". Do not include any other text or explanation.'
+                },
+                {
+                  type: 'image_url',
+                  image_url: { url: `data:${mime};base64,${base64}` }
+                }
+              ]
+            }]
+          })
+        });
+        data = await response.json();
+      } catch (err) {
+        showDirectStatus('error', `Gagal: ${err.message}`);
+        btn.disabled = false;
+        return;
+      }
+
+      btn.disabled = false;
+
+      if (!response.ok) {
+        showDirectStatus('error', `HTTP ${response.status}: ${data?.error?.message ?? JSON.stringify(data)}`);
+        resultEl.style.display = 'block';
+        resultEl.innerHTML = `<div class="json-raw">${escapeHtml(JSON.stringify(data, null, 2))}</div>`;
+        return;
+      }
+
+      const content = data?.choices?.[0]?.message?.content ?? '';
+      const keywords = content.split(',').map(k => k.trim()).filter(k => k && k !== 'tidak_ada');
+      const usage = data?.usage ?? {};
+
+      showDirectStatus('success', `✅ Berhasil! Model: ${model}`);
+
+      resultEl.style.display = 'block';
+      resultEl.innerHTML = `
+    <div style="margin-bottom:10px">
+      <span class="badge ok">✅ Vision OK</span>
+      <span class="badge vision" style="margin-left:6px">Tokens: ${usage.total_tokens ?? '?'}</span>
+    </div>
+    <h3 style="color:#64748b;font-size:0.82rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">
+      🔍 Kata Kunci Terdeteksi
+    </h3>
+    <div class="keywords-wrap" style="margin-bottom:12px">
+      ${keywords.length > 0
+          ? keywords.map(k => `<span class="kw-tag">${k}</span>`).join('')
+          : '<span style="color:#f87171;font-size:0.85rem">Tidak ada keyword terdeteksi</span>'}
+    </div>
+    <h3 style="color:#64748b;font-size:0.82rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">
+      📋 Raw Response
+    </h3>
+    <div class="json-raw">${escapeHtml(JSON.stringify(data, null, 2))}</div>
+  `;
+    }
+
+    function showDirectStatus(type, msg) {
+      const el = document.getElementById('direct-status');
+      el.style.display = 'flex';
+      el.innerHTML = `<div class="status-bar ${type}">
+    ${type === 'loading' ? '<div class="spinner"></div>' : (type === 'success' ? '✅' : '❌')}
+    <span>${msg}</span>
+  </div>`;
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+
+</html>

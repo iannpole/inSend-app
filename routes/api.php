@@ -57,6 +57,8 @@ Route::get('/recipes',          [RecipeController::class, 'index']);
 Route::get('/recipes/{id}',     [RecipeController::class, 'show']);
 
 // ── Reviews (public read) ───────────────────────────────────
+// ── Reviews (public read) ───────────────────────────────────
+Route::get('/reviews/featured', [ReviewController::class, 'featured']);
 Route::get('/products/{product_id}/reviews', [ReviewController::class, 'productReviews']);
 
 // ── Blog (public read) ──────────────────────────────────────

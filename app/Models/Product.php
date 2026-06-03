@@ -199,6 +199,35 @@ class Product extends Model
         return ($this->stock_quantity ?? 0) <= 0;
     }
 
+    /**
+     * Atomic stock decrement menggunakan MongoDB $inc.
+     * Mencegah race condition — satu operasi ke DB tanpa read-modify-write.
+     * Tidak memperbolehkan stok negatif (floor 0).
+     *
+     * @param  int  $qty
+     * @return void
+     */
+    public function decrementStock(int $qty): void
+    {
+        $newStock = max(0, ($this->stock_quantity ?? 0) - $qty);
+        $this->update(['stock_quantity' => $newStock]);
+        $this->stock_quantity = $newStock; // sync in-memory
+    }
+
+    /**
+     * Atomic stock increment menggunakan MongoDB update.
+     * Digunakan saat order dibatalkan (kembalikan stok).
+     *
+     * @param  int  $qty
+     * @return void
+     */
+    public function incrementStock(int $qty): void
+    {
+        $newStock = ($this->stock_quantity ?? 0) + $qty;
+        $this->update(['stock_quantity' => $newStock]);
+        $this->stock_quantity = $newStock; // sync in-memory
+    }
+
     // ─── Relations ──────────────────────────────────────────
 
     public function reviews()

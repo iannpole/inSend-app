@@ -68,6 +68,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('admin.reviews.index') }}" class="flex items-center px-4 py-2.5 rounded-xl transition-all {{ request()->routeIs('admin.reviews.*') ? 'bg-[#00473B]/10 text-[#00473B] font-semibold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' }}">
+                            <svg class="w-5 h-5 mr-3 {{ request()->routeIs('admin.reviews.*') ? 'text-[#00473B]' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
+                            Reviews
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('admin.users.index') }}" class="flex items-center px-4 py-2.5 rounded-xl transition-all {{ request()->routeIs('admin.users.*') ? 'bg-[#00473B]/10 text-[#00473B] font-semibold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900' }}">
                             <svg class="w-5 h-5 mr-3 {{ request()->routeIs('admin.users.*') ? 'text-[#00473B]' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                             Users
@@ -128,10 +134,59 @@
                     <button class="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors shadow-sm">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                     </button>
-                    <button class="relative w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors shadow-sm">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                        <span class="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-                    </button>
+                    <div class="relative" id="notification-dropdown-container">
+                        <button id="notification-btn" class="relative w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors shadow-sm">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                            @if(isset($globalActivities) && $globalActivities->count() > 0)
+                            <span class="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                            @endif
+                        </button>
+
+                        <!-- Notification Dropdown -->
+                        <div id="notification-dropdown" class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 hidden z-50 overflow-hidden">
+                            <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+                                <h3 class="font-bold text-gray-900 text-sm">Recent Activity</h3>
+                            </div>
+                            <div class="max-h-80 overflow-y-auto">
+                                @if(isset($globalActivities) && $globalActivities->count() > 0)
+                                    @foreach($globalActivities as $activity)
+                                        @php
+                                            $iconColors = [
+                                                'create' => 'text-green-500 bg-green-50',
+                                                'update' => 'text-blue-500 bg-blue-50',
+                                                'delete' => 'text-red-500 bg-red-50',
+                                            ];
+                                            $iconColor = $iconColors[$activity->action] ?? 'text-gray-500 bg-gray-50';
+                                            $icons = [
+                                                'create' => 'M12 4v16m8-8H4',
+                                                'update' => 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z',
+                                                'delete' => 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
+                                            ];
+                                            $iconPath = $icons[$activity->action] ?? 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z';
+                                        @endphp
+                                        <div class="p-3 border-b border-gray-50 hover:bg-gray-50 transition-colors flex gap-3">
+                                            <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 {{ $iconColor }}">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $iconPath }}"></path></svg>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-900 leading-snug">
+                                                    <span class="font-semibold">{{ $activity->user_name }}</span> {{ $activity->action }}d {{ $activity->model_type }} <span class="font-medium">{{ $activity->model_name }}</span>
+                                                </p>
+                                                <p class="text-[10px] text-gray-400 mt-1">{{ $activity->created_at->diffForHumans() }}</p>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <div class="p-6 text-center text-gray-400 text-sm">
+                                        No recent activity
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="p-2 border-t border-gray-100 bg-gray-50 text-center">
+                                <a href="{{ route('admin.dashboard') }}" class="text-xs font-semibold text-[#115E3B] hover:underline">View all in Dashboard</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="h-8 w-px bg-gray-200 mx-1"></div>
@@ -265,6 +320,23 @@
                 document.addEventListener('click', function(e) {
                     if (!document.getElementById('global-search-container').contains(e.target)) {
                         searchResults.classList.add('hidden');
+                    }
+                });
+            }
+
+            // Notification Dropdown Toggle
+            const notifBtn = document.getElementById('notification-btn');
+            const notifDropdown = document.getElementById('notification-dropdown');
+            const notifContainer = document.getElementById('notification-dropdown-container');
+
+            if (notifBtn && notifDropdown) {
+                notifBtn.addEventListener('click', function() {
+                    notifDropdown.classList.toggle('hidden');
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (!notifContainer.contains(e.target)) {
+                        notifDropdown.classList.add('hidden');
                     }
                 });
             }

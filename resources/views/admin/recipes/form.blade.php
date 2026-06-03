@@ -67,16 +67,46 @@
                 class="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-[#00473B] focus:ring focus:ring-[#00473B] focus:ring-opacity-20 outline-none transition-all text-sm">{{ old('description', $recipe->description ?? '') }}</textarea>
         </div>
 
+        <div class="space-y-3">
+            <div class="flex items-center justify-between">
+                <label class="block text-sm font-medium text-gray-700">Instructions (Steps)</label>
+                <button type="button" onclick="addInstruction()" class="text-sm text-[#00473B] hover:text-[#00382e] font-medium">+ Add Step</button>
+            </div>
+            <div id="instructions-container" class="space-y-3">
+                @if(isset($recipe) && is_array($recipe->instructions) && count($recipe->instructions) > 0)
+                    @foreach($recipe->instructions as $index => $step)
+                        <div class="flex gap-2 items-start instruction-item">
+                            <span class="mt-2 text-sm text-gray-500 font-medium w-6 step-number">{{ $index + 1 }}.</span>
+                            <textarea name="instructions[]" rows="2" required class="flex-1 px-4 py-2 rounded-lg border border-gray-200 focus:border-[#00473B] focus:ring focus:ring-[#00473B] focus:ring-opacity-20 outline-none transition-all text-sm">{{ $step }}</textarea>
+                            <button type="button" onclick="this.parentElement.remove(); updateInstructionNumbers();" class="mt-2 text-red-500 hover:text-red-700 p-1">✕</button>
+                        </div>
+                    @endforeach
+                @else
+                    <div class="flex gap-2 items-start instruction-item">
+                        <span class="mt-2 text-sm text-gray-500 font-medium w-6 step-number">1.</span>
+                        <textarea name="instructions[]" rows="2" required class="flex-1 px-4 py-2 rounded-lg border border-gray-200 focus:border-[#00473B] focus:ring focus:ring-[#00473B] focus:ring-opacity-20 outline-none transition-all text-sm"></textarea>
+                        <button type="button" onclick="this.parentElement.remove(); updateInstructionNumbers();" class="mt-2 text-red-500 hover:text-red-700 p-1">✕</button>
+                    </div>
+                @endif
+            </div>
+        </div>
+
         <div class="space-y-1">
             <label for="images" class="block text-sm font-medium text-gray-700">Images</label>
             <input type="file" name="images[]" id="images" multiple accept="image/*"
                 class="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-[#00473B] focus:ring focus:ring-[#00473B] focus:ring-opacity-20 outline-none transition-all text-sm bg-gray-50 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-white file:text-gray-700 file:border file:border-gray-200 hover:file:bg-gray-50">
-            @if(isset($recipe) && is_array($recipe->images))
-                <div class="flex gap-2 mt-4 flex-wrap">
+            @if(isset($recipe) && is_array($recipe->images) && count($recipe->images) > 0)
+                <div class="flex gap-3 mt-4 flex-wrap" id="existing-images-container">
                     @foreach($recipe->images as $img)
-                        <img src="{{ asset('storage/' . $img) }}" class="h-20 w-20 object-cover rounded-lg border border-gray-200">
+                        <div class="relative group" id="img-container-{{ md5($img) }}">
+                            <img src="{{ \Illuminate\Support\Str::startsWith($img, 'http') ? $img : asset('storage/' . $img) }}" class="h-24 w-24 object-cover rounded-xl border border-gray-200" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=Image&color=00473B&background=E6F2ED';">
+                            <button type="button" onclick="removeImage('{{ $img }}', 'img-container-{{ md5($img) }}')" class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
+                                ✕
+                            </button>
+                        </div>
                     @endforeach
                 </div>
+                <div id="deleted-images-inputs"></div>
             @endif
         </div>
 
@@ -95,4 +125,45 @@
         </div>
     </form>
 </div>
+
+@push('scripts')
+<script>
+    function removeImage(imagePath, containerId) {
+        // Remove the image element from the view
+        document.getElementById(containerId).remove();
+        
+        // Add a hidden input to submit the deleted image path
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'deleted_images[]';
+        input.value = imagePath;
+        document.getElementById('deleted-images-inputs').appendChild(input);
+    }
+
+    function updateInstructionNumbers() {
+        const items = document.querySelectorAll('.instruction-item');
+        items.forEach((item, index) => {
+            const numSpan = item.querySelector('.step-number');
+            if (numSpan) {
+                numSpan.textContent = (index + 1) + '.';
+            }
+        });
+    }
+
+    function addInstruction() {
+        const container = document.getElementById('instructions-container');
+        const itemCount = container.querySelectorAll('.instruction-item').length;
+        
+        const html = `
+            <div class="flex gap-2 items-start instruction-item">
+                <span class="mt-2 text-sm text-gray-500 font-medium w-6 step-number">${itemCount + 1}.</span>
+                <textarea name="instructions[]" rows="2" required class="flex-1 px-4 py-2 rounded-lg border border-gray-200 focus:border-[#00473B] focus:ring focus:ring-[#00473B] focus:ring-opacity-20 outline-none transition-all text-sm"></textarea>
+                <button type="button" onclick="this.parentElement.remove(); updateInstructionNumbers();" class="mt-2 text-red-500 hover:text-red-700 p-1">✕</button>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', html);
+    }
+</script>
+@endpush
 @endsection

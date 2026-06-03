@@ -19,7 +19,7 @@
         
         <!-- Logo -->
         <div class="absolute top-10 left-12 flex items-center gap-3">
-            <span class="text-2xl font-bold text-white tracking-tight">InSend</span>
+            <span class="text-2xl font-bold text-white tracking-tight">inSend</span>
         </div>
         
         <!-- Quote -->

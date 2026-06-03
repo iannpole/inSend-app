@@ -44,6 +44,9 @@ Route::middleware(['web', 'admin'])->prefix('admin')->name('admin.')->group(func
     // Promotions
     Route::resource('promotions', AdminPromoController::class)->except(['show']);
     
+    // Reviews
+    Route::resource('reviews', App\Http\Controllers\Admin\AdminReviewController::class)->only(['index', 'destroy']);
+    
     // Users
     Route::resource('users', AdminUserController::class)->except(['create', 'store', 'show']);
 });

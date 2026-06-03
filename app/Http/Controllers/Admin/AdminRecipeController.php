@@ -62,6 +62,8 @@ class AdminRecipeController extends Controller
             'difficulty'   => 'required|string|in:easy,medium,hard',
             'is_published' => 'nullable|string',
             'images.*'     => 'nullable|image|max:2048',
+            'instructions' => 'nullable|array',
+            'instructions.*'=> 'required|string',
         ]);
 
         $validated['is_published'] = $request->has('is_published');
@@ -75,6 +77,12 @@ class AdminRecipeController extends Controller
             }
         }
         $validated['images'] = $imagePaths;
+
+        if (!isset($validated['instructions']) || !is_array($validated['instructions'])) {
+            $validated['instructions'] = [];
+        } else {
+            $validated['instructions'] = array_values(array_filter($validated['instructions'], fn($s) => !empty(trim($s))));
+        }
 
         Recipe::create($validated);
 
@@ -103,16 +111,45 @@ class AdminRecipeController extends Controller
             'difficulty'   => 'required|string|in:easy,medium,hard',
             'is_published' => 'nullable|string',
             'images.*'     => 'nullable|image|max:2048',
+            'instructions' => 'nullable|array',
+            'instructions.*'=> 'required|string',
         ]);
 
         $validated['is_published'] = $request->has('is_published');
 
+        $existingImages = is_array($recipe->images) ? $recipe->images : [];
+
+        if ($request->has('deleted_images')) {
+            $deletedImages = $request->deleted_images;
+            foreach ($deletedImages as $delImg) {
+                // Delete file from storage if it's local
+                if (!\Illuminate\Support\Str::startsWith($delImg, 'http')) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($delImg);
+                }
+                // Remove from existing images array
+                if (($key = array_search($delImg, $existingImages)) !== false) {
+                    unset($existingImages[$key]);
+                }
+            }
+            // Re-index array
+            $existingImages = array_values($existingImages);
+            $validated['images'] = $existingImages;
+        }
+
         if ($request->hasFile('images')) {
-            $existingImages = $recipe->images ?? [];
             foreach ($request->file('images') as $image) {
                 $existingImages[] = $image->store('recipes', 'public');
             }
             $validated['images'] = $existingImages;
+        }
+
+        unset($validated['deleted_images']);
+
+        if (!isset($validated['instructions']) || !is_array($validated['instructions'])) {
+            $validated['instructions'] = [];
+        } else {
+            // Remove any empty steps
+            $validated['instructions'] = array_values(array_filter($validated['instructions'], fn($s) => !empty(trim($s))));
         }
 
         $recipe->update($validated);

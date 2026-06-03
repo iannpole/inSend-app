@@ -179,4 +179,48 @@ class ReviewController extends Controller
             'review_count'   => $reviewCount,
         ]);
     }
+
+    /**
+     * GET /api/reviews/featured — Featured reviews for home page (changes weekly)
+     */
+    public function featured(): JsonResponse
+    {
+        // Use week of the year as a seed to rotate featured reviews per week
+        $weekSeed = (int) date('W') + (int) date('Y');
+        
+        // Fetch 5 star reviews
+        $reviews = Review::where('rating', '>=', 4)
+            ->whereNotNull('comment')
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get();
+            
+        if ($reviews->isEmpty()) {
+            return response()->json(['status' => 'success', 'data' => []]);
+        }
+
+        // Shuffle with seed based on the week
+        srand($weekSeed);
+        $shuffled = $reviews->shuffle()->take(5);
+        srand(); // reset seed
+
+        $formatted = $shuffled->map(function ($review) {
+            $user = \App\Models\User::find($review->user_id);
+            $product = \App\Models\Product::find($review->product_id);
+            return [
+                'id'           => (string) $review->_id,
+                'user_name'    => $user ? $user->name : 'Anonymous',
+                'user_avatar'  => $user ? $user->avatar : null,
+                'product_name' => $product ? $product->name : 'Produk',
+                'rating'       => $review->rating,
+                'comment'      => $review->comment,
+                'created_at'   => $review->created_at?->toIso8601String(),
+            ];
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => $formatted->values(),
+        ]);
+    }
 }
